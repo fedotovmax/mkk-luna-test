@@ -48,8 +48,13 @@ type HTTPServerConfig struct {
 	Port uint16
 }
 
+type DatabaseCofnig struct {
+	DSN string
+}
+
 type AppConfig struct {
 	HTTPServer *HTTPServerConfig
+	Database   *DatabaseCofnig
 	Env        AppEnv
 }
 
@@ -91,9 +96,18 @@ func New(path string) (*AppConfig, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	mysqlDsn, err := getEnv("MYSQL_DSN")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
 	cfg := &AppConfig{
 		HTTPServer: &HTTPServerConfig{
 			Port: httpServerPort,
+		},
+		Database: &DatabaseCofnig{
+			DSN: mysqlDsn,
 		},
 		Env: env,
 	}
