@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/fedotovmax/mkk-luna-test/internal/validation"
 	"github.com/joho/godotenv"
@@ -49,7 +50,17 @@ type HTTPServerConfig struct {
 }
 
 type DatabaseCofnig struct {
-	DSN string
+	DSN        string
+	MaxRetries uint8         // by default is 1
+	RetryWait  time.Duration // by default is 1s
+}
+
+func (c *DatabaseCofnig) SetMaxRetries(value uint8) {
+	c.MaxRetries = value
+}
+
+func (c *DatabaseCofnig) SetRetryWait(value time.Duration) {
+	c.RetryWait = value
 }
 
 type AppConfig struct {
@@ -107,7 +118,9 @@ func New(path string) (*AppConfig, error) {
 			Port: httpServerPort,
 		},
 		Database: &DatabaseCofnig{
-			DSN: mysqlDsn,
+			DSN:        mysqlDsn,
+			MaxRetries: 1,
+			RetryWait:  time.Second * 1,
 		},
 		Env: env,
 	}

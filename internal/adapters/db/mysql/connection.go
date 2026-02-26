@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db"
+	"github.com/fedotovmax/mkk-luna-test/internal/config"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 	mysqlDriver "github.com/go-sql-driver/mysql"
 )
@@ -59,7 +60,7 @@ func connectWithRetries(
 
 	var lastPingError error
 
-	for i := 1; i <= 5; i++ {
+	for i := uint8(1); i <= maxRetries; i++ {
 		if ctx.Err() != nil {
 			constructorCloseConnection(db, log)
 			return nil, ctx.Err()
@@ -70,7 +71,7 @@ func connectWithRetries(
 			return db, nil
 		}
 
-		log.Warn("mysql ping failed", slog.Int("attempt", i), logger.Err(lastPingError))
+		log.Warn("mysql ping failed", slog.Int("attempt", int(i)), logger.Err(lastPingError))
 
 		select {
 		case <-time.After(retryWait):
@@ -89,12 +90,7 @@ func New(
 
 	log *slog.Logger,
 
-	dsn string,
-
-	maxRetries uint8,
-
-	retryWait time.Duration,
-
+	cfg *config.DatabaseCofnig,
 ) (db.StdSQLDriver, error) {
 
 	const op = "adapters.db.mysql.New"
@@ -103,14 +99,14 @@ func New(
 
 	mysqlOnce.Do(func() {
 
-		_, err := mysqlDriver.ParseDSN(dsn)
+		_, err := mysqlDriver.ParseDSN(cfg.DSN)
 
 		if err != nil {
 			initErr = fmt.Errorf("%s: %w: %v", op, ErrInvalidDSNFormat, err)
 			return
 		}
 
-		mysqlPool, initErr = connectWithRetries(ctx, l, dsn, maxRetries, retryWait)
+		mysqlPool, initErr = connectWithRetries(ctx, l, cfg.DSN, cfg.MaxRetries, cfg.RetryWait)
 		if initErr == nil && mysqlPool != nil {
 			mysqlPool.SetMaxOpenConns(10)
 			mysqlPool.SetMaxIdleConns(5)

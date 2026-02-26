@@ -1,10 +1,13 @@
-package cmd
+package main
 
 import (
+	"context"
 	"flag"
 	"log/slog"
 	"os"
+	"time"
 
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 )
@@ -44,5 +47,19 @@ func main() {
 	log := setupLooger(appConfig.Env)
 
 	log.Info("Logger setup")
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	mysqlConn, err := mysql.New(ctx, log, appConfig.Database)
+
+	if err != nil {
+		log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	log.Info("MySQL successfully connected!")
+
+	_ = mysqlConn
 
 }
