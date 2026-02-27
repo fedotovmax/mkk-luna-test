@@ -43,8 +43,9 @@ func TestNew_Environments(t *testing.T) {
 		t.Setenv("APP_ENV", "release")
 		t.Setenv("HTTP_SERVER_PORT", "9000")
 		t.Setenv("MYSQL_DSN", "user:pass@tcp(localhost:3306)/db")
+		t.Setenv("REDIS_ADDR", "localhost:6381")
 
-		cfg, err := New("") // В релизе путь к .env не должен использоваться
+		cfg, err := New("")
 		require.NoError(t, err)
 
 		assert.Equal(t, Release, cfg.Env)
@@ -52,10 +53,9 @@ func TestNew_Environments(t *testing.T) {
 	})
 
 	t.Run("development mode with file", func(t *testing.T) {
-		// Создаем временный .env файл для теста
 		tmpDir := t.TempDir()
 		envPath := filepath.Join(tmpDir, ".env")
-		content := []byte("HTTP_SERVER_PORT=5000\nMYSQL_DSN=file_dsn")
+		content := []byte("HTTP_SERVER_PORT=5000\nMYSQL_DSN=file_dsn\nREDIS_ADDR=localhost:6381")
 		err := os.WriteFile(envPath, content, 0644)
 		require.NoError(t, err)
 

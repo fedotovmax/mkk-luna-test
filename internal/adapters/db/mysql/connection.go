@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -11,13 +10,8 @@ import (
 
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
-	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 	mysqlDriver "github.com/go-sql-driver/mysql"
 )
-
-var ErrWantToCallMethodsAfterInitPool = errors.New("you will be able to call mysql pool methods only after the connection has been created and initialized")
-
-var ErrInvalidDSNFormat = errors.New("invalid mysql dsn format")
 
 type pool struct {
 	log *slog.Logger
@@ -29,60 +23,6 @@ var (
 	mysqlPool *sql.DB
 	initErr   error
 )
-
-func constructorCloseConnection(db *sql.DB, log *slog.Logger) {
-	if db != nil {
-		err := db.Close()
-		if err != nil {
-			log.Error("failed when close mysql database connection", logger.Err(err))
-		}
-	}
-}
-
-func connectWithRetries(
-
-	ctx context.Context,
-
-	log *slog.Logger,
-
-	dsn string,
-
-	maxRetries uint8,
-
-	retryWait time.Duration,
-
-) (*sql.DB, error) {
-
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, err
-	}
-
-	var lastPingError error
-
-	for i := uint8(1); i <= maxRetries; i++ {
-		if ctx.Err() != nil {
-			constructorCloseConnection(db, log)
-			return nil, ctx.Err()
-		}
-		lastPingError = db.PingContext(ctx)
-
-		if lastPingError == nil {
-			return db, nil
-		}
-
-		log.Warn("mysql ping failed", slog.Int("attempt", int(i)), logger.Err(lastPingError))
-
-		select {
-		case <-time.After(retryWait):
-		case <-ctx.Done():
-			constructorCloseConnection(db, log)
-			return nil, ctx.Err()
-		}
-	}
-	constructorCloseConnection(db, log)
-	return nil, fmt.Errorf("connection to mysql failed after %d attempts: %w", maxRetries, lastPingError)
-}
 
 func New(
 
@@ -108,10 +48,10 @@ func New(
 
 		mysqlPool, initErr = connectWithRetries(ctx, l, cfg.DSN, cfg.MaxRetries, cfg.RetryWait)
 		if initErr == nil && mysqlPool != nil {
-			mysqlPool.SetMaxOpenConns(10)
+			mysqlPool.SetMaxOpenConns(15)
 			mysqlPool.SetMaxIdleConns(5)
-			mysqlPool.SetConnMaxLifetime(5 * time.Minute)
-			mysqlPool.SetConnMaxIdleTime(1 * time.Minute)
+			mysqlPool.SetConnMaxLifetime(30 * time.Minute)
+			mysqlPool.SetConnMaxIdleTime(5 * time.Minute)
 		}
 	})
 

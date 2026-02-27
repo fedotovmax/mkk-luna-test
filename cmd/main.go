@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/cache/redis"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
@@ -59,6 +60,20 @@ func main() {
 	}
 
 	log.Info("MySQL successfully connected!")
+
+	redisCtx, cancelRedisCtx := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancelRedisCtx()
+
+	redisConn, err := redis.New(redisCtx, appConfig.Redis, log)
+
+	if err != nil {
+		log.Error(err.Error())
+		os.Exit(1)
+	}
+
+	log.Info("Redis successfully connected!")
+
+	_ = redisConn
 
 	_ = mysqlConn
 

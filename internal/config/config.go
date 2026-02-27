@@ -50,9 +50,9 @@ type HTTPServerConfig struct {
 }
 
 type DatabaseCofnig struct {
+	RetryWait  time.Duration // by default is 500ms
 	DSN        string
-	MaxRetries uint8         // by default is 1
-	RetryWait  time.Duration // by default is 1s
+	MaxRetries uint8 // by default is 1
 }
 
 func (c *DatabaseCofnig) SetMaxRetries(value uint8) {
@@ -63,9 +63,26 @@ func (c *DatabaseCofnig) SetRetryWait(value time.Duration) {
 	c.RetryWait = value
 }
 
+type RedisConfig struct {
+	RetryWait  time.Duration // by default is 200ms
+	Addr       string
+	Password   string
+	DB         int
+	MaxRetries uint8 // by default is 1
+}
+
+func (c *RedisConfig) SetMaxRetries(value uint8) {
+	c.MaxRetries = value
+}
+
+func (c *RedisConfig) SetRetryWait(value time.Duration) {
+	c.RetryWait = value
+}
+
 type AppConfig struct {
 	HTTPServer *HTTPServerConfig
 	Database   *DatabaseCofnig
+	Redis      *RedisConfig
 	Env        AppEnv
 }
 
@@ -113,6 +130,18 @@ func New(path string) (*AppConfig, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
+	redisAddr, err := getEnv("REDIS_ADDR")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	redisPassword, err := getEnv("REDIS_PASSWORD")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
 	cfg := &AppConfig{
 		HTTPServer: &HTTPServerConfig{
 			Port: httpServerPort,
@@ -120,7 +149,13 @@ func New(path string) (*AppConfig, error) {
 		Database: &DatabaseCofnig{
 			DSN:        mysqlDsn,
 			MaxRetries: 1,
-			RetryWait:  time.Second * 1,
+			RetryWait:  time.Millisecond * 500,
+		},
+		Redis: &RedisConfig{
+			Addr:       redisAddr,
+			Password:   redisPassword,
+			MaxRetries: 1,
+			RetryWait:  time.Millisecond * 200,
 		},
 		Env: env,
 	}
@@ -143,6 +178,18 @@ func (c *AppConfig) validate() error {
 
 	if err != nil {
 		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "HTTPServer.Port", err))
+	}
+
+	err = validation.EmptyString(c.Redis.Password)
+
+	if err != nil {
+		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Redis.Password", err))
+	}
+
+	_, err = validation.IsURI(c.Redis.Addr)
+
+	if err != nil {
+		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Redis.Addr", err))
 	}
 
 	return errors.Join(validationErrors...)
