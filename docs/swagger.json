@@ -1,0 +1,13 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Swagger Documentation for mkk_luna_test_rest_api (тестовое задание для компании \"МКК ЛУНА\")",
+        "title": "Swagger Documentation for mkk_luna_test_rest_api",
+        "contact": {
+            "name": "Fedotv Maxim (developer)",
+            "email": "f3d0t0tvmax@yandex.ru"
+        },
+        "version": "1.0"
+    },
+    "paths": {}
+}

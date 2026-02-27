@@ -5,10 +5,11 @@ import (
 	"flag"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/fedotovmax/mkk-luna-test/internal/adapters/cache/redis"
-	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql"
+	"github.com/fedotovmax/mkk-luna-test/internal/app"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 )
@@ -34,6 +35,11 @@ func loadConfigPathFlags() string {
 	return configPath
 }
 
+// @title Swagger Documentation for mkk_luna_test_rest_api
+// @version 1.0
+// @description Swagger Documentation for mkk_luna_test_rest_api (тестовое задание для компании "МКК ЛУНА")
+// @contact.name Fedotv Maxim (developer)
+// @contact.email f3d0t0tvmax@yandex.ru
 func main() {
 
 	configPath := loadConfigPathFlags()
@@ -47,34 +53,35 @@ func main() {
 
 	log := setupLooger(appConfig.Env)
 
-	log.Info("Logger setup")
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-
-	mysqlConn, err := mysql.New(ctx, log, appConfig.Database)
+	app, err := app.New(appConfig, log)
 
 	if err != nil {
 		log.Error(err.Error())
 		os.Exit(1)
 	}
 
-	log.Info("MySQL successfully connected!")
+	notifyCtx, cancelNotifyCtx := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	defer cancelNotifyCtx()
 
-	redisCtx, cancelRedisCtx := context.WithTimeout(context.Background(), time.Second*5)
-	defer cancelRedisCtx()
+	startErrChan := app.Start()
 
-	redisConn, err := redis.New(redisCtx, appConfig.Redis, log)
-
-	if err != nil {
-		log.Error(err.Error())
-		os.Exit(1)
+	select {
+	case err := <-startErrChan:
+		log.Error("Error recivied when starting application", logger.Err(err))
+		cancelNotifyCtx()
+	case <-notifyCtx.Done():
+		log.Info("OS signal recevied")
 	}
 
-	log.Info("Redis successfully connected!")
+	log.Info("Starting to shutdown all resources")
 
-	_ = redisConn
+	shutdownCtx, cancelShutdownCtx := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelShutdownCtx()
 
-	_ = mysqlConn
+	app.Stop(shutdownCtx)
 
 }

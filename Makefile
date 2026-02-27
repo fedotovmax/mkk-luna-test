@@ -20,6 +20,8 @@ migrator-force:
 migrator-version:
 	@APP_ENV=development go run ./cmd/migrator/main.go -m version -c .env
 
+swagger:
+	swag init -g cmd/api/main.go
 
 # docker exec -it mariadb bash
 # mariadb -u mkk_luna_owner -p mkk_luna
