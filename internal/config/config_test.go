@@ -44,6 +44,7 @@ func TestNew_Environments(t *testing.T) {
 		t.Setenv("HTTP_SERVER_PORT", "9000")
 		t.Setenv("MYSQL_DSN", "user:pass@tcp(localhost:3306)/db")
 		t.Setenv("REDIS_ADDR", "localhost:6381")
+		t.Setenv("REDIS_PASSWORD", "123456789")
 
 		cfg, err := New("")
 		require.NoError(t, err)
@@ -52,10 +53,17 @@ func TestNew_Environments(t *testing.T) {
 		assert.Equal(t, uint16(9000), cfg.HTTPServer.Port)
 	})
 
+	var envFile = `
+	HTTP_SERVER_PORT=5000
+	MYSQL_DSN=file_dsn
+	REDIS_ADDR=localhost:6381
+	REDIS_PASSWORD=123456789
+	`
+
 	t.Run("development mode with file", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		envPath := filepath.Join(tmpDir, ".env")
-		content := []byte("HTTP_SERVER_PORT=5000\nMYSQL_DSN=file_dsn\nREDIS_ADDR=localhost:6381")
+		content := []byte(envFile)
 		err := os.WriteFile(envPath, content, 0644)
 		require.NoError(t, err)
 
@@ -69,26 +77,65 @@ func TestNew_Environments(t *testing.T) {
 }
 
 func TestAppConfig_Validate(t *testing.T) {
-
 	tests := []struct {
-		name    string
-		port    uint16
-		wantErr bool
+		name        string
+		port        uint16
+		redisAddr   string
+		redisPass   string
+		wantErr     bool
+		errorFields []string // для проверки, какие поля упали
 	}{
-		{"valid port", 8080, false},
-		{"invalid port", 80, true},
-		{"min port", 1024, false},
-		{"max port", 65535, false},
+		{
+			name:      "valid config",
+			port:      8080,
+			redisAddr: "redis://localhost:6379",
+			redisPass: "secret",
+			wantErr:   false,
+		},
+		{
+			name:        "invalid port",
+			port:        80,
+			redisAddr:   "redis://localhost:6379",
+			redisPass:   "secret",
+			wantErr:     true,
+			errorFields: []string{"HTTPServer.Port"},
+		},
+		{
+			name:        "empty redis password",
+			port:        8080,
+			redisAddr:   "redis://localhost:6379",
+			redisPass:   "",
+			wantErr:     true,
+			errorFields: []string{"Redis.Password"},
+		},
+		{
+			name:        "multiple errors",
+			port:        80,
+			redisAddr:   "localhost:6379",
+			redisPass:   "",
+			wantErr:     true,
+			errorFields: []string{"HTTPServer.Port", "Redis.Password"},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cfg := &AppConfig{
 				HTTPServer: &HTTPServerConfig{Port: tt.port},
+				Redis: &RedisConfig{
+					Addr:     tt.redisAddr,
+					Password: tt.redisPass,
+				},
 			}
+
 			err := cfg.validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
+
+				// проверим, что все ожидаемые поля упали
+				for _, field := range tt.errorFields {
+					assert.Contains(t, err.Error(), field)
+				}
 			} else {
 				assert.NoError(t, err)
 			}

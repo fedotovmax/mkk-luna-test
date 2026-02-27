@@ -3,47 +3,11 @@ package config
 import (
 	"errors"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/fedotovmax/mkk-luna-test/internal/validation"
 	"github.com/joho/godotenv"
 )
-
-var ErrInvalidAppEnv = errors.New("app env is invalid or not supported")
-var ErrConfigPathNotExists = errors.New("config path for dev env is not exists")
-
-type AppEnv string
-
-const (
-	Development AppEnv = "development"
-	Release     AppEnv = "release"
-)
-
-func parseEnvVariable(env string) (AppEnv, error) {
-	switch env {
-	case string(Development):
-		return Development, nil
-	case string(Release):
-		return Release, nil
-	default:
-		return "", ErrInvalidAppEnv
-	}
-}
-
-func checkConfigPathExists(path string) error {
-
-	_, err := os.Stat(path)
-
-	if err != nil {
-		if os.IsNotExist(err) {
-			return fmt.Errorf("%w: %v", ErrConfigPathNotExists, err)
-		}
-		return err
-	}
-
-	return nil
-}
 
 type HTTPServerConfig struct {
 	Port uint16
