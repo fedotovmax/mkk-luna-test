@@ -4,6 +4,11 @@ import (
 	"time"
 )
 
+type Local struct {
+	UserID    string
+	SessionID string
+}
+
 type Session struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

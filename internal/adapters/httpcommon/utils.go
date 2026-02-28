@@ -20,3 +20,11 @@ func WriteJSON(w http.ResponseWriter, status int, v any) {
 		http.Error(w, `{"message": "failed to encode json"}`, http.StatusInternalServerError)
 	}
 }
+
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
+func Message(m string) MessageResponse {
+	return MessageResponse{Message: m}
+}
