@@ -1,0 +1,57 @@
+package inputs
+
+import (
+	"github.com/fedotovmax/mkk-luna-test/internal/domain"
+	"github.com/fedotovmax/mkk-luna-test/internal/validation"
+)
+
+type CreateUser struct {
+	UserName string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+}
+
+func (i *CreateUser) SetPasswordHash(hash string) {
+	i.Password = hash
+}
+
+func (i *CreateUser) Validate() error {
+
+	var verrs []domain.ValidationError
+
+	err := validation.IsEmail(i.Email)
+
+	if err != nil {
+		verrs = append(verrs, domain.ValidationError{
+			Field:   "Email",
+			Message: "Некорректный формат email",
+		})
+	}
+
+	msg, err := validatePassword(i.Password)
+
+	if err != nil {
+		verrs = append(verrs, domain.ValidationError{
+			Field:   "Password",
+			Message: msg,
+		})
+	}
+
+	err = validation.MinLength(i.UserName, 3)
+
+	if err != nil {
+		verrs = append(verrs, domain.ValidationError{
+			Field:   "Username",
+			Message: "Имя пользователя должно быть не менее 3 символов",
+		})
+	}
+
+	if len(verrs) > 0 {
+		ve := &domain.ValidatationErrors{
+			Errors: verrs,
+		}
+		return ve
+	}
+
+	return nil
+}

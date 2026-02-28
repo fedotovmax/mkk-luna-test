@@ -43,10 +43,16 @@ func (c *RedisConfig) SetRetryWait(value time.Duration) {
 	c.RetryWait = value
 }
 
+type Jwt struct {
+	AccessTokenExpDuration time.Duration
+	AccessTokenSecret      string
+}
+
 type AppConfig struct {
 	HTTPServer *HTTPServerConfig
 	Database   *DatabaseCofnig
 	Redis      *RedisConfig
+	Jwt        *Jwt
 	Env        AppEnv
 }
 

@@ -26,6 +26,39 @@ type App struct {
 	dbpool     db.StdSQLDriver
 }
 
+func testQuery(ctx context.Context, ex mysqlTx.Extractor) error {
+	q := "select id from users;"
+
+	tx := ex.ExtractTx(ctx)
+
+	rows, err := tx.Query(q)
+
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	var ids []string
+
+	for rows.Next() {
+		var id string
+		err := rows.Scan(&id)
+		if err != nil {
+			return err
+		}
+		ids = append(ids, id)
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	//return fmt.Errorf("simulate error")
+
+	fmt.Println("ID пользователей:", ids)
+	return nil
+}
+
 func New(cfg *config.AppConfig, log *slog.Logger) (*App, error) {
 
 	const op = "app.New"
@@ -56,7 +89,14 @@ func New(cfg *config.AppConfig, log *slog.Logger) (*App, error) {
 
 	txExtractor := transactionManager.GetExtractor()
 
-	_ = txExtractor
+	err = transactionManager.Wrap(context.Background(), func(ctx context.Context) error {
+		err := testQuery(ctx, txExtractor)
+		return err
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
 
 	r := chi.NewRouter()
 
