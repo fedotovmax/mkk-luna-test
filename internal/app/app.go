@@ -7,6 +7,7 @@ import (
 	"time"
 
 	_ "github.com/fedotovmax/mkk-luna-test/docs"
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/auth/jwt"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/cache/redis"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql"
@@ -19,47 +20,14 @@ import (
 )
 
 type App struct {
-	cfg        *config.AppConfig
+	cfg        *config.App
 	redispool  *redis.RedisDb
 	httpserver *http.Server
 	log        *slog.Logger
 	dbpool     db.StdSQLDriver
 }
 
-func testQuery(ctx context.Context, ex mysqlTx.Extractor) error {
-	q := "select id from users;"
-
-	tx := ex.ExtractTx(ctx)
-
-	rows, err := tx.Query(q)
-
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	var ids []string
-
-	for rows.Next() {
-		var id string
-		err := rows.Scan(&id)
-		if err != nil {
-			return err
-		}
-		ids = append(ids, id)
-	}
-
-	if err := rows.Err(); err != nil {
-		return err
-	}
-
-	//return fmt.Errorf("simulate error")
-
-	fmt.Println("ID пользователей:", ids)
-	return nil
-}
-
-func New(cfg *config.AppConfig, log *slog.Logger) (*App, error) {
+func New(cfg *config.App, log *slog.Logger) (*App, error) {
 
 	const op = "app.New"
 
@@ -89,14 +57,11 @@ func New(cfg *config.AppConfig, log *slog.Logger) (*App, error) {
 
 	txExtractor := transactionManager.GetExtractor()
 
-	err = transactionManager.Wrap(context.Background(), func(ctx context.Context) error {
-		err := testQuery(ctx, txExtractor)
-		return err
-	})
+	_ = txExtractor
 
-	if err != nil {
-		return nil, fmt.Errorf("%s: %w", op, err)
-	}
+	tokenManager := jwt.New(cfg.Tokens.AccessSecret, cfg.Tokens.AccessExpDuration)
+
+	_ = tokenManager
 
 	r := chi.NewRouter()
 

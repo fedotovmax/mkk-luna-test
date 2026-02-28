@@ -12,7 +12,7 @@ import (
 
 func TestServer_StartAndStop(t *testing.T) {
 	// используем случайный порт)
-	cfg := &config.HTTPServerConfig{Port: 0}
+	cfg := &config.HTTPServer{Port: 0}
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})

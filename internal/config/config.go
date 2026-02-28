@@ -9,25 +9,25 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type HTTPServerConfig struct {
+type HTTPServer struct {
 	Port uint16
 }
 
-type DatabaseCofnig struct {
+type Database struct {
 	RetryWait  time.Duration // by default is 500ms
 	DSN        string
 	MaxRetries uint8 // by default is 1
 }
 
-func (c *DatabaseCofnig) SetMaxRetries(value uint8) {
+func (c *Database) SetMaxRetries(value uint8) {
 	c.MaxRetries = value
 }
 
-func (c *DatabaseCofnig) SetRetryWait(value time.Duration) {
+func (c *Database) SetRetryWait(value time.Duration) {
 	c.RetryWait = value
 }
 
-type RedisConfig struct {
+type Redis struct {
 	RetryWait  time.Duration // by default is 200ms
 	Addr       string
 	Password   string
@@ -35,31 +35,33 @@ type RedisConfig struct {
 	MaxRetries uint8 // by default is 1
 }
 
-func (c *RedisConfig) SetMaxRetries(value uint8) {
+func (c *Redis) SetMaxRetries(value uint8) {
 	c.MaxRetries = value
 }
 
-func (c *RedisConfig) SetRetryWait(value time.Duration) {
+func (c *Redis) SetRetryWait(value time.Duration) {
 	c.RetryWait = value
 }
 
-type Jwt struct {
-	AccessTokenExpDuration time.Duration
-	AccessTokenSecret      string
+type Tokens struct {
+	AccessExpDuration  time.Duration
+	RefreshExpDuration time.Duration
+	AccessSecret       string
+	Issuer             string
 }
 
-type AppConfig struct {
-	HTTPServer *HTTPServerConfig
-	Database   *DatabaseCofnig
-	Redis      *RedisConfig
-	Jwt        *Jwt
+type App struct {
+	HTTPServer *HTTPServer
+	Database   *Database
+	Redis      *Redis
+	Tokens     *Tokens
 	Env        AppEnv
 }
 
 // Load config from file, when required APP_ENV variable provided and equal to local or development,
 // And required flag "config_path" for *.env file with variables: -c or -config_path
 // Else get env variables provided by operation system (defined by user/container/environment)
-func New(path string) (*AppConfig, error) {
+func New(path string) (*App, error) {
 
 	const op = "config.New"
 
@@ -112,20 +114,49 @@ func New(path string) (*AppConfig, error) {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	cfg := &AppConfig{
-		HTTPServer: &HTTPServerConfig{
+	accessTokenSecret, err := getEnv("ACCESS_TOKEN_SECRET")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	accessTokenExpDuration, err := getEnvAs[time.Duration]("ACCESS_TOKEN_DURATION")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	refreshTokenExpDuration, err := getEnvAs[time.Duration]("REFRESH_TOKEN_DURATION")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	tokenIssuer, err := getEnv("TOKEN_ISSUER")
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	cfg := &App{
+		HTTPServer: &HTTPServer{
 			Port: httpServerPort,
 		},
-		Database: &DatabaseCofnig{
+		Database: &Database{
 			DSN:        mysqlDsn,
 			MaxRetries: 1,
 			RetryWait:  time.Millisecond * 500,
 		},
-		Redis: &RedisConfig{
+		Redis: &Redis{
 			Addr:       redisAddr,
 			Password:   redisPassword,
 			MaxRetries: 1,
 			RetryWait:  time.Millisecond * 200,
+		},
+		Tokens: &Tokens{
+			AccessExpDuration:  accessTokenExpDuration,
+			RefreshExpDuration: refreshTokenExpDuration,
+			AccessSecret:       accessTokenSecret,
+			Issuer:             tokenIssuer,
 		},
 		Env: env,
 	}
@@ -140,7 +171,7 @@ func New(path string) (*AppConfig, error) {
 
 }
 
-func (c *AppConfig) validate() error {
+func (c *App) validate() error {
 
 	var validationErrors []error
 
@@ -160,6 +191,30 @@ func (c *AppConfig) validate() error {
 
 	if err != nil {
 		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Redis.Addr", err))
+	}
+
+	err = validation.Min(c.Tokens.AccessExpDuration, 1)
+
+	if err != nil {
+		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Tokens.AccessExpDuration", err))
+	}
+
+	err = validation.Min(c.Tokens.RefreshExpDuration, 1)
+
+	if err != nil {
+		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Tokens.RefreshExpDuration", err))
+	}
+
+	err = validation.MinLength(c.Tokens.Issuer, 1)
+
+	if err != nil {
+		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Tokens.Issuer", err))
+	}
+
+	err = validation.MinLength(c.Tokens.AccessSecret, 1)
+
+	if err != nil {
+		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Tokens.AccessSecret", err))
 	}
 
 	return errors.Join(validationErrors...)

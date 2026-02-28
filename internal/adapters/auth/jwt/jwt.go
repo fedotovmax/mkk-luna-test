@@ -1,44 +1,40 @@
 package jwt
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var ErrInvalidToken = errors.New("invalid token")
-
-var ErrParseClaims = errors.New("error when parse claims")
-
-type CreateParms struct {
-	Issuer          string
-	UID             string
-	SID             string
-	Secret          string
-	ExpiresDuration time.Duration
+type manager struct {
+	secret  string
+	expires time.Duration
 }
 
-func CreateAccessToken(params CreateParms) (token string, exp time.Time, err error) {
+func New(secret string, expires time.Duration) *manager {
+	return &manager{secret: secret, expires: expires}
+}
 
-	const op = "passport.CreateAccessToken"
+func (m *manager) Create(issuer, uid, sid string) (token string, exp time.Time, err error) {
+
+	const op = "adapters.auth.jwt.Create"
 
 	now := time.Now().UTC()
 
-	exp = now.Add(params.ExpiresDuration)
+	exp = now.Add(m.expires)
 
 	accessClaims := jwt.RegisteredClaims{
 		ExpiresAt: jwt.NewNumericDate(exp),
 		IssuedAt:  jwt.NewNumericDate(now),
-		Issuer:    params.Issuer,
-		ID:        params.SID,
-		Subject:   params.UID,
+		Issuer:    issuer,
+		ID:        sid,
+		Subject:   uid,
 	}
 
 	accessTokenObject := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 
-	token, err = accessTokenObject.SignedString([]byte(params.Secret))
+	token, err = accessTokenObject.SignedString([]byte(m.secret))
 
 	if err != nil {
 		err = fmt.Errorf("%s: %w", op, err)
@@ -47,28 +43,21 @@ func CreateAccessToken(params CreateParms) (token string, exp time.Time, err err
 	}
 
 	return token, exp, nil
-
 }
 
-type VerifyParams struct {
-	Token  string
-	Issuer string
-	Secret string
-}
+func (m *manager) Verify(token, issuer, secret string) (jti string, uid string, err error) {
 
-func Verify(params VerifyParams) (jti string, uid string, err error) {
-
-	const op = "passport.Verify"
+	const op = "adapters.auth.jwt.Verify"
 
 	opts := []jwt.ParserOption{
 		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
-		jwt.WithIssuer(params.Issuer),
+		jwt.WithIssuer(issuer),
 		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}),
 	}
 
-	result, err := jwt.ParseWithClaims(params.Token, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
-		return []byte(params.Secret), nil
+	result, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
+		return []byte(secret), nil
 	}, opts...)
 
 	if err != nil {

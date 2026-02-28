@@ -12,7 +12,7 @@ type Server struct {
 	instance *http.Server
 }
 
-func New(httpServerConfig *config.HTTPServerConfig, handler http.Handler) *Server {
+func New(httpServerConfig *config.HTTPServer, handler http.Handler) *Server {
 	inst := &http.Server{
 		Addr:    fmt.Sprintf(":%d", httpServerConfig.Port),
 		Handler: handler,

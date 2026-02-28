@@ -15,7 +15,7 @@ type RedisDb struct {
 	log         *slog.Logger
 }
 
-func New(ctx context.Context, cfg *config.RedisConfig, log *slog.Logger) (*RedisDb, error) {
+func New(ctx context.Context, cfg *config.Redis, log *slog.Logger) (*RedisDb, error) {
 
 	const op = "adapters.cache.redis.New"
 

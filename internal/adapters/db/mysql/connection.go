@@ -30,7 +30,7 @@ func New(
 
 	log *slog.Logger,
 
-	cfg *config.DatabaseCofnig,
+	cfg *config.Database,
 ) (db.StdSQLDriver, error) {
 
 	const op = "adapters.db.mysql.New"
