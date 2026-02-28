@@ -13,6 +13,7 @@ create table if not exists sessions (
     refresh_hash text unique not null,
     created_at timestamp default current_timestamp,
     updated_at timestamp default current_timestamp on update current_timestamp,
+    expires_at timestamp not null,
     foreign key (user_id) references users(id) on delete cascade
 );
 
@@ -29,7 +30,7 @@ create table if not exists team_members (
     id char(36) primary key,
     team_id char(36) not null,
     user_id char(36) not null,
-    role enum('admin','member') not null,
+    role enum('admin','member', 'owner') not null,
     joined_at timestamp default current_timestamp,
     unique(team_id, user_id),
     foreign key (team_id) references teams(id) on delete cascade,

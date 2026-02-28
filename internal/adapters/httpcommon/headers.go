@@ -1,4 +1,4 @@
-package keys
+package httpcommon
 
 const HeaderContentType = "Content-Type"
 

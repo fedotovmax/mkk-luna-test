@@ -17,7 +17,7 @@ func (u *user) Create(ctx context.Context, in *inputs.CreateUser) (string, error
 
 	id := uuid.New().String()
 
-	_, err := tx.Exec(create, id, in.UserName, in.Email, in.Password)
+	_, err := tx.ExecContext(ctx, create, id, in.UserName, in.Email, in.Password)
 
 	if err != nil {
 		return "", fmt.Errorf("%s: %w: %v", op, adapters.ErrInternal, err)

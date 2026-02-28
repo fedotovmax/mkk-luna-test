@@ -1,11 +1,9 @@
-package utils
+package httpcommon
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
-
-	"github.com/fedotovmax/mkk-luna-test/internal/keys"
 )
 
 func DecodeJSON(r io.Reader, v any) error {
@@ -15,7 +13,7 @@ func DecodeJSON(r io.Reader, v any) error {
 
 func WriteJSON(w http.ResponseWriter, status int, v any) {
 
-	w.Header().Set(keys.HeaderContentType, keys.ContentTypeJSON)
+	w.Header().Set(HeaderContentType, ContentTypeJSON)
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(v); err != nil {
