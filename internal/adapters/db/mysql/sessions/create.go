@@ -22,3 +22,5 @@ func (s *session) Create(ctx context.Context, in *inputs.CreateSession) error {
 
 	return nil
 }
+
+const create = "insert into sessions (id, user_id, refresh_hash, expires_at) values (?, ?, ?, ?);"

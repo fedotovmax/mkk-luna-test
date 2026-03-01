@@ -2,15 +2,9 @@ package domain
 
 import "time"
 
-type TeamUser struct {
-	ID       string
-	Username string
-	Email    string
-}
-
 type Team struct {
 	Members   []Member
-	Owner     TeamUser
+	Owner     BaseUser
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	ID        string
@@ -26,8 +20,30 @@ const (
 )
 
 type Member struct {
-	User     TeamUser
+	User     BaseUser
 	JoinedAt time.Time
 	ID       string
 	Role     Role
+}
+
+func (m *Member) CanInvite() bool {
+	return m.Role == RoleAdmin || m.Role == RoleOwner
+}
+
+func (m *Member) CanDelete() bool {
+	return m.Role == RoleOwner
+}
+
+type TeamStats struct {
+	ID                     string
+	Name                   string
+	MembersCount           int
+	DoneTasksLastSevenDays int
+}
+
+type TopUserInTeam struct {
+	User         BaseUser
+	TeamID       string
+	TeamName     string
+	CreatedTasks int
 }

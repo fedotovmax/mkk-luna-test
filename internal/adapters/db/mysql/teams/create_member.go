@@ -25,3 +25,5 @@ func (t *team) CreateMember(ctx context.Context, teamID, userID string, role dom
 
 	return id, nil
 }
+
+const createMember = "insert into team_members (id, team_id, user_id, role) values (?, ?, ?, ?);"

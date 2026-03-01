@@ -12,3 +12,9 @@ type User struct {
 	PasswordHash string
 	ID           string
 }
+
+type BaseUser struct {
+	ID       string
+	Username string
+	Email    string
+}

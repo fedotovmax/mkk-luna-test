@@ -45,3 +45,7 @@ func (u *user) FindOne(ctx context.Context, field fields.UserField, value string
 
 	return user, nil
 }
+
+func findByQuery(field fields.UserField) string {
+	return fmt.Sprintf("select id, username, email, password_hash, created_at, updated_at from users where %s = ?;", field)
+}

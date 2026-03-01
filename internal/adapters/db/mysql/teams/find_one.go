@@ -78,7 +78,7 @@ func (t *team) FindOne(ctx context.Context, field fields.TeamField, value string
 					ID:       memberRowID.String,
 					Role:     domain.Role(role.String),
 					JoinedAt: joinedAt.Time,
-					User: domain.TeamUser{
+					User: domain.BaseUser{
 						ID:       memberID.String,
 						Username: memberUsername.String,
 						Email:    memberEmail.String,
@@ -100,4 +100,32 @@ func (t *team) FindOne(ctx context.Context, field fields.TeamField, value string
 	}
 
 	return team, nil
+}
+
+func findByQuery(field fields.TeamField) string {
+	return fmt.Sprintf(`
+		select
+			t.id,
+			t.name,
+			t.created_at,
+			t.updated_at,
+
+			owner.id,
+			owner.username,
+			owner.email,
+
+			tm.id,
+			tm.role,
+			tm.joined_at,
+
+			member.id,
+			member.username,
+			member.email
+
+		from teams t
+		join users owner on owner.id = t.created_by
+		left join team_members tm on tm.team_id = t.id
+		left join users member on member.id = tm.user_id
+		where t.%s = ?
+	`, field)
 }

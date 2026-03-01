@@ -24,3 +24,5 @@ func (t *team) Create(ctx context.Context, ownerID, name string) (string, error)
 
 	return id, nil
 }
+
+const create = "insert into teams (id, name, created_by) values (?, ?, ?);"

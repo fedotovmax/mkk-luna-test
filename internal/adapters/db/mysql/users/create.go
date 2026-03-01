@@ -25,3 +25,5 @@ func (u *user) Create(ctx context.Context, in *inputs.CreateUser) (string, error
 
 	return id, nil
 }
+
+const create = "insert into users (id, username, email, password_hash) values (?, ?, ?, ?);"

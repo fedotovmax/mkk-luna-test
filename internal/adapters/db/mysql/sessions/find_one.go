@@ -39,3 +39,5 @@ func (s *session) FindOne(ctx context.Context, hash string) (*domain.Session, er
 	return sess, nil
 
 }
+
+const findOne = "select id, user_id, refresh_hash, created_at, updated_at, expires_at from sessions where refresh_hash = ?;"

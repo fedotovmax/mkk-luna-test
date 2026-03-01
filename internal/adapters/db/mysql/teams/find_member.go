@@ -37,3 +37,15 @@ func (t *team) FindMember(ctx context.Context, userID, teamID string) (*domain.M
 
 	return member, nil
 }
+
+const findMember = `
+select
+    tm.id,
+    tm.role,
+    tm.joined_at,
+    u.id,
+    u.username,
+    u.email
+from team_members tm
+join users u on u.id = tm.user_id
+where tm.user_id = ? and tm.team_id = ?;`

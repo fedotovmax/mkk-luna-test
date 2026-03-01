@@ -1,20 +1,19 @@
-package sessions
+package teams
 
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters"
 )
 
-func (s *session) Update(ctx context.Context, id string, newHash string, newExpires time.Time) error {
+func (t *team) DeleteMember(ctx context.Context, id string) error {
 
-	const op = "adapters.db.mysql.sessions.update"
+	const op = "adapters.db.mysql.teams.delete_member"
 
-	tx := s.txExtractor.ExtractTx(ctx)
+	tx := t.txExtractor.ExtractTx(ctx)
 
-	res, err := tx.ExecContext(ctx, update, newHash, newExpires, id)
+	res, err := tx.ExecContext(ctx, deleteMember, id)
 
 	if err != nil {
 		return fmt.Errorf("%s: %w: %v", op, adapters.ErrInternal, err)
@@ -33,4 +32,4 @@ func (s *session) Update(ctx context.Context, id string, newHash string, newExpi
 	return nil
 }
 
-const update = "update sessions set refresh_hash = ?, expires_at = ? where id = ?;"
+const deleteMember = "delete from team_members where id = ?;"
