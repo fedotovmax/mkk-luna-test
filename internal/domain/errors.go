@@ -6,12 +6,12 @@ import (
 )
 
 type ValidationError struct {
-	Field   string
-	Message string
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
 
 type ValidatationErrors struct {
-	Errors []ValidationError
+	Errors []ValidationError `json:"errors"`
 }
 
 func (e *ValidatationErrors) Error() string {

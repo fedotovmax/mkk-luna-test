@@ -18,6 +18,13 @@ type Session struct {
 	UserID      string
 }
 
+type LoginResponse struct {
+	AccessToken    string
+	RefreshToken   string
+	AccessExpTime  time.Time
+	RefreshExpTime time.Time
+}
+
 func (s *Session) IsExpired() bool {
 	return time.Now().After(s.ExpiresAt)
 }

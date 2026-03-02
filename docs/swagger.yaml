@@ -1,3 +1,48 @@
+definitions:
+  domain.IDResponse:
+    properties:
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        format: uuid
+        type: string
+    required:
+    - id
+    type: object
+  domain.ValidatationErrors:
+    properties:
+      errors:
+        items:
+          $ref: '#/definitions/domain.ValidationError'
+        type: array
+    type: object
+  domain.ValidationError:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  httpcommon.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  inputs.CreateUser:
+    properties:
+      email:
+        example: testemail@mail.ru
+        type: string
+      password:
+        example: Assdfsdf2323!_
+        type: string
+      username:
+        example: username123
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
 info:
   contact:
     email: f3d0t0tvmax@yandex.ru
@@ -6,5 +51,39 @@ info:
     для компании "МКК ЛУНА")
   title: Swagger Documentation for mkk_luna_test_rest_api
   version: "1.0"
-paths: {}
+paths:
+  /api/v1/register:
+    post:
+      consumes:
+      - application/json
+      description: Create new user account
+      parameters:
+      - description: Create user account with body dto
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/inputs.CreateUser'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.IDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ValidatationErrors'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+      summary: Create user account
+      tags:
+      - users
 swagger: "2.0"

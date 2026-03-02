@@ -6,9 +6,9 @@ import (
 )
 
 type CreateUser struct {
-	UserName string `json:"username" validate:"required"`
-	Email    string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	UserName string `json:"username" validate:"required" example:"username123"`
+	Email    string `json:"email" validate:"required" example:"testemail@mail.ru"`
+	Password string `json:"password" validate:"required" example:"Assdfsdf2323!_"`
 }
 
 func (i *CreateUser) SetPasswordHash(hash string) {

@@ -8,28 +8,31 @@ import (
 )
 
 type manager struct {
-	secret  string
-	expires time.Duration
+	secret string
 }
 
-func New(secret string, expires time.Duration) *manager {
-	return &manager{secret: secret, expires: expires}
+func New(secret string) *manager {
+	return &manager{secret: secret}
 }
 
-func (m *manager) Create(issuer, uid, sid string) (token string, exp time.Time, err error) {
+type CreateParams struct {
+	Issuer         string
+	Uid            string
+	Sid            string
+	TokenExpiresAt time.Time
+	Now            time.Time
+}
+
+func (m *manager) Create(p *CreateParams) (token string, err error) {
 
 	const op = "adapters.auth.jwt.Create"
 
-	now := time.Now().UTC()
-
-	exp = now.Add(m.expires)
-
 	accessClaims := jwt.RegisteredClaims{
-		ExpiresAt: jwt.NewNumericDate(exp),
-		IssuedAt:  jwt.NewNumericDate(now),
-		Issuer:    issuer,
-		ID:        sid,
-		Subject:   uid,
+		ExpiresAt: jwt.NewNumericDate(p.TokenExpiresAt),
+		IssuedAt:  jwt.NewNumericDate(p.Now),
+		Issuer:    p.Issuer,
+		ID:        p.Sid,
+		Subject:   p.Uid,
 	}
 
 	accessTokenObject := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
@@ -38,14 +41,14 @@ func (m *manager) Create(issuer, uid, sid string) (token string, exp time.Time, 
 
 	if err != nil {
 		err = fmt.Errorf("%s: %w", op, err)
-		exp = time.Time{}
-		return "", exp, err
+
+		return "", err
 	}
 
-	return token, exp, nil
+	return token, nil
 }
 
-func (m *manager) Verify(token, issuer, secret string) (jti string, uid string, err error) {
+func (m *manager) Verify(token, issuer string) (jti string, uid string, err error) {
 
 	const op = "adapters.auth.jwt.Verify"
 
@@ -57,7 +60,7 @@ func (m *manager) Verify(token, issuer, secret string) (jti string, uid string, 
 	}
 
 	result, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
-		return []byte(secret), nil
+		return []byte(m.secret), nil
 	}, opts...)
 
 	if err != nil {

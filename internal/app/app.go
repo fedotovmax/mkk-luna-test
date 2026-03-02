@@ -14,6 +14,8 @@ import (
 	mysqlTx "github.com/fedotovmax/mkk-luna-test/internal/adapters/db/transaction/mysql"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/server/http"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
+	v1 "github.com/fedotovmax/mkk-luna-test/internal/controllers/http/v1"
+	"github.com/fedotovmax/mkk-luna-test/internal/usecases"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
@@ -59,13 +61,19 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 
 	_ = txExtractor
 
-	tokenManager := jwt.New(cfg.Tokens.AccessSecret, cfg.Tokens.AccessExpDuration)
+	tokenManager := jwt.New(cfg.Tokens.AccessSecret)
 
 	_ = tokenManager
 
 	r := chi.NewRouter()
 
 	r.Handle("/swagger/*", httpSwagger.WrapHandler)
+
+	usersController := v1.NewUsers(&usecases.Register{}, &usecases.Login{}, log)
+
+	r.Route("/api/v1", func(r chi.Router) {
+		usersController.RegisterRoutes(r)
+	})
 
 	//TODO: init routes
 
@@ -90,10 +98,14 @@ func (a *App) Start() <-chan error {
 	errChan := make(chan error, 1)
 
 	go func() {
+
 		log.Info(
 			"Starting HTTP server...",
 			slog.String("addr", fmt.Sprintf("http://localhost:%d", a.cfg.HTTPServer.Port)),
 		)
+
+		log.Info("Swagger documentation is available at", slog.String("addr", fmt.Sprintf("http://localhost:%d/swagger/", a.cfg.HTTPServer.Port)))
+
 		if err := a.httpserver.Start(); err != nil {
 			errChan <- fmt.Errorf("%s: %w", op, err)
 		}

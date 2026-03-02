@@ -39,7 +39,6 @@ func validateAuthHeader(header string) (string, error) {
 func NewAuthMiddleware(
 	log *slog.Logger,
 	tokenManager ports.TokenManager,
-	tokenSecret string,
 	issuer string,
 ) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -56,7 +55,7 @@ func NewAuthMiddleware(
 				return
 			}
 
-			sid, uid, err := tokenManager.Verify(accessToken, issuer, tokenSecret)
+			sid, uid, err := tokenManager.Verify(accessToken, issuer)
 
 			if err != nil {
 				log.Error("auth failed middleware failed", logger.Err(err))

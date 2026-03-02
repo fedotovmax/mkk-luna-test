@@ -1,8 +1,10 @@
 package inputs
 
+import "time"
+
 type CreateSession struct {
 	ID          string
 	UserID      string
 	RefreshHash string
-	ExpiresAt   string
+	ExpiresAt   time.Time
 }
