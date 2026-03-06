@@ -8,7 +8,7 @@ import (
 )
 
 type TeamStorage interface {
-	FindMany(ctx context.Context, limit, offset int, userID string) ([]*domain.Team, error)
+	FindMany(ctx context.Context, limit, offset int, userID string) (*domain.FindTeamsResponse, error)
 	FindMember(ctx context.Context, userID, teamID string) (*domain.Member, error)
 	FindOne(ctx context.Context, field fields.TeamField, value string) (*domain.Team, error)
 	Stats(ctx context.Context) ([]domain.TeamStats, error)

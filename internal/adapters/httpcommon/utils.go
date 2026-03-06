@@ -3,8 +3,11 @@ package httpcommon
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
+
+	"github.com/fedotovmax/mkk-luna-test/internal/domain"
 )
 
 func DecodeJSON(r io.Reader, v any) error {
@@ -30,4 +33,14 @@ type MessageResponse struct {
 
 func Message(m string) MessageResponse {
 	return MessageResponse{Message: m}
+}
+
+var ErrUnauthorized = errors.New("unauthorized")
+
+func GetLocalSession(r *http.Request) (*domain.Local, error) {
+	user, ok := r.Context().Value(SessionCtxKey).(*domain.Local)
+	if !ok {
+		return nil, ErrUnauthorized
+	}
+	return user, nil
 }

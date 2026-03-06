@@ -23,31 +23,31 @@ type Login struct {
 	log          *slog.Logger
 	tokensCfg    *config.Tokens
 	tokenManager ports.TokenManager
-	query        queries.Users
+	users        queries.Users
 	storage      ports.SessionStorage
 }
 
 func NewLogin(
 	log *slog.Logger,
-	query queries.Users,
+	users queries.Users,
 	storage ports.SessionStorage,
 	tokenManager ports.TokenManager,
 	tokensCfg *config.Tokens,
 ) *Login {
 	return &Login{
 		log:          log,
-		query:        query,
+		users:        users,
 		storage:      storage,
 		tokensCfg:    tokensCfg,
 		tokenManager: tokenManager,
 	}
 }
 
-func (u *Login) Execute(ctx context.Context, in *inputs.CreateUser) (*domain.LoginResponse, error) {
+func (u *Login) Execute(ctx context.Context, in *inputs.Login) (*domain.LoginResponse, error) {
 
 	const op = "usecases.login"
 
-	user, err := u.query.FindByEmail(ctx, in.Email)
+	user, err := u.users.FindByEmail(ctx, in.Email)
 
 	if err != nil {
 		if errors.Is(err, errs.ErrUserNotFound) {

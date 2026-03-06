@@ -10,16 +10,29 @@ import (
 	"github.com/fedotovmax/mkk-luna-test/internal/domain"
 )
 
-func (t *team) FindMany(ctx context.Context, limit, offset int, userID string) ([]*domain.Team, error) {
+func (t *team) FindMany(
+	ctx context.Context,
+	limit, offset int,
+	userID string,
+) (*domain.FindTeamsResponse, error) {
+
 	const op = "adapters.db.mysql.teams.find_many"
 
 	tx := t.txExtractor.ExtractTx(ctx)
 
-	q, args := buildFindMany(limit, offset, userID)
+	countQuery, countArgs := buildCount(userID)
 
-	rows, err := tx.QueryContext(ctx, q, args...)
+	var total int
+	err := tx.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	query, args := buildFindMany(limit, offset, userID)
+
+	rows, err := tx.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	defer rows.Close()
 
@@ -67,7 +80,7 @@ func (t *team) FindMany(ctx context.Context, limit, offset int, userID string) (
 			&memberEmail,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 
 		if _, exists := teamMap[teamID]; !exists {
@@ -107,7 +120,7 @@ func (t *team) FindMany(ctx context.Context, limit, offset int, userID string) (
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	result := make([]*domain.Team, 0, len(teamOrder))
@@ -115,7 +128,10 @@ func (t *team) FindMany(ctx context.Context, limit, offset int, userID string) (
 		result = append(result, teamMap[id])
 	}
 
-	return result, nil
+	return &domain.FindTeamsResponse{
+		Total: total,
+		Teams: result,
+	}, nil
 }
 
 func buildFindMany(limit, offset int, userID string) (string, []any) {
@@ -185,6 +201,37 @@ func buildFindMany(limit, offset int, userID string) (string, []any) {
 		left join users member on member.id = tm.user_id
 		order by t.created_at desc;
 	`, whereClause, limitClause, offsetClause)
+
+	return query, args
+}
+
+func buildCount(userID string) (string, []any) {
+
+	whereParts := []string{}
+	args := []any{}
+
+	if userID != "" {
+		whereParts = append(whereParts, `
+			exists (
+				select 1
+				from team_members tm_filter
+				where tm_filter.team_id = t.id
+				and tm_filter.user_id = ?
+			)
+		`)
+		args = append(args, userID)
+	}
+
+	whereClause := ""
+	if len(whereParts) > 0 {
+		whereClause = "where " + strings.Join(whereParts, " and ")
+	}
+
+	query := fmt.Sprintf(`
+		select count(*)
+		from teams t
+		%s;
+	`, whereClause)
 
 	return query, args
 }

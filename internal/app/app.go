@@ -11,22 +11,30 @@ import (
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/cache/redis"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql"
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/sessions"
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/tasks"
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/teams"
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/users"
 	mysqlTx "github.com/fedotovmax/mkk-luna-test/internal/adapters/db/transaction/mysql"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/server/http"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
 	v1 "github.com/fedotovmax/mkk-luna-test/internal/controllers/http/v1"
+	"github.com/fedotovmax/mkk-luna-test/internal/middlewares"
+	"github.com/fedotovmax/mkk-luna-test/internal/queries"
 	"github.com/fedotovmax/mkk-luna-test/internal/usecases"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 	"github.com/go-chi/chi/v5"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
+	"golang.org/x/time/rate"
 )
 
 type App struct {
-	cfg        *config.App
-	redispool  *redis.RedisDb
-	httpserver *http.Server
-	log        *slog.Logger
-	dbpool     db.StdSQLDriver
+	cfg         *config.App
+	redispool   *redis.RedisDb
+	httpserver  *http.Server
+	rateLimiter *middlewares.UserRateLimiter
+	log         *slog.Logger
+	dbpool      db.StdSQLDriver
 }
 
 func New(cfg *config.App, log *slog.Logger) (*App, error) {
@@ -59,32 +67,52 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 
 	txExtractor := transactionManager.GetExtractor()
 
-	_ = txExtractor
+	teamsMysql := teams.New(txExtractor)
+	tasksMysql := tasks.New(txExtractor)
+	usersMysql := users.New(txExtractor)
+	sessionsMysql := sessions.New(txExtractor)
+
+	teamsQuery := queries.NewTeams(teamsMysql)
+	tasksQuery := queries.NewTasks(tasksMysql)
+	usersQuery := queries.NewUsers(usersMysql)
 
 	tokenManager := jwt.New(cfg.Tokens.AccessSecret)
 
-	_ = tokenManager
+	loginUsecase := usecases.NewLogin(log, usersQuery, sessionsMysql, tokenManager, cfg.Tokens)
+	registerUsecase := usecases.NewRegister(log, usersMysql, usersQuery)
+	createTeamUsecase := usecases.NewCreateTeam(log, transactionManager, teamsMysql, teamsQuery)
+	inviteUsecase := usecases.NewInvite(log, teamsMysql, teamsQuery)
+	createTaskUsecase := usecases.NewCreateTask(log, transactionManager, tasksMysql, teamsQuery)
+	updateTaskUsecase := usecases.NewUpdateTask(log, transactionManager, tasksMysql, tasksQuery, teamsQuery)
+	getTaskHistoryUsecase := usecases.NewGetTaskHistory(log, tasksQuery, teamsQuery)
+	getTaskCommentsUsecase := usecases.NewGetTaskComments(log, tasksQuery, teamsQuery)
+	getTasksUsecase := usecases.NewGetTasks(log, tasksQuery, teamsQuery)
+	authMiddleware := middlewares.NewAuthMiddleware(log, tokenManager, cfg.Tokens.Issuer)
+	rateLimiter := middlewares.NewUserRateLimiter(rate.Every(time.Minute/100), 10)
 
 	r := chi.NewRouter()
 
 	r.Handle("/swagger/*", httpSwagger.WrapHandler)
 
-	usersController := v1.NewUsers(&usecases.Register{}, &usecases.Login{}, log)
+	usersController := v1.NewUsers(registerUsecase, loginUsecase, log)
+	teamController := v1.NewTeams(log, createTeamUsecase, inviteUsecase, teamsQuery, authMiddleware)
+	taskController := v1.NewTasks(log, createTaskUsecase, updateTaskUsecase, getTaskHistoryUsecase, getTaskCommentsUsecase, getTasksUsecase, authMiddleware, tasksQuery)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		usersController.RegisterRoutes(r)
+		teamController.RegisterRoutes(r)
+		taskController.RegisterRoutes(r)
 	})
-
-	//TODO: init routes
 
 	httpServer := http.New(cfg.HTTPServer, r)
 
 	app := &App{
-		redispool:  redisConn,
-		dbpool:     mysqlConn,
-		httpserver: httpServer,
-		log:        log,
-		cfg:        cfg,
+		redispool:   redisConn,
+		dbpool:      mysqlConn,
+		httpserver:  httpServer,
+		rateLimiter: rateLimiter,
+		log:         log,
+		cfg:         cfg,
 	}
 
 	return app, nil
@@ -136,4 +164,7 @@ func (a *App) Stop(ctx context.Context) {
 	} else {
 		log.Info("DB pool stopped successfully!")
 	}
+
+	a.rateLimiter.Stop()
+	log.Info("Rate limiter stopped")
 }

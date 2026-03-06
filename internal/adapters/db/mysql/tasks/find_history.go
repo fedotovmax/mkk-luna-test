@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters"
@@ -26,20 +27,30 @@ func (t *task) FindTaskHistory(ctx context.Context, taskID string) ([]*domain.Hi
 	for rows.Next() {
 
 		h := &domain.History{}
+		var snapshot json.RawMessage
 
 		err := rows.Scan(
 			&h.ID,
 			&h.TaskID,
-			&h.Shapshot,
+			&snapshot,
 			&h.ChangedAt,
 
 			&h.ChangedBy.ID,
 			&h.ChangedBy.Username,
 			&h.ChangedBy.Email,
 		)
+
 		if err != nil {
-			return nil, fmt.Errorf("%s: %w", op, adapters.ErrInternal)
+			return nil, fmt.Errorf("%s: %w: %v", op, adapters.ErrInternal, err)
 		}
+
+		var taskSnapshot domain.Task
+
+		if err := json.Unmarshal(snapshot, &taskSnapshot); err != nil {
+			return nil, fmt.Errorf("%s: %w: %v", op, adapters.ErrInternal, err)
+		}
+
+		h.Shapshot = taskSnapshot
 
 		historyList = append(historyList, h)
 	}

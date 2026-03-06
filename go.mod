@@ -42,5 +42,6 @@ require (
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	golang.org/x/crypto v0.48.0
+	golang.org/x/time v0.14.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

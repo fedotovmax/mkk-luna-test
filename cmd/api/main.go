@@ -40,6 +40,10 @@ func loadConfigPathFlags() string {
 // @description Swagger Documentation for mkk_luna_test_rest_api (тестовое задание для компании "МКК ЛУНА")
 // @contact.name Fedotv Maxim (developer)
 // @contact.email f3d0t0tvmax@yandex.ru
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Введите "Bearer [ваш JWT токен]"
 func main() {
 
 	configPath := loadConfigPathFlags()

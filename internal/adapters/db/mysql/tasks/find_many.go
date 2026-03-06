@@ -13,23 +13,15 @@ import (
 
 func (t *task) FindMany(
 	ctx context.Context,
+	offset, limit int,
 	in *inputs.FindManyTasks,
 ) (*domain.FindTasksResponse, error) {
 
 	const op = "adapters.db.mysql.tasks.find_many"
 
-	if in.Page <= 0 {
-		in.Page = 1
-	}
-	if in.PageSize <= 0 {
-		in.PageSize = 20
-	}
-
 	tx := t.txExtractor.ExtractTx(ctx)
 
-	offset := (in.Page - 1) * in.PageSize
-
-	countQuery, countArgs := buildCountTasksQuery(in.TeamID, in.Status, in.AssigneeID)
+	countQuery, countArgs := buildCount(in.TeamID, in.Status, in.AssigneeID)
 	var total int
 
 	err := tx.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total)
@@ -38,14 +30,14 @@ func (t *task) FindMany(
 		return nil, fmt.Errorf("%s: %w", op, adapters.ErrInternal)
 	}
 
-	query, args := buildFindTasksQuery(in.TeamID, in.Status, in.AssigneeID, in.PageSize, offset)
+	query, args := buildFindMany(in.TeamID, in.Status, in.AssigneeID, limit, offset)
 	rows, err := tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, adapters.ErrInternal)
 	}
 	defer rows.Close()
 
-	tasks := make([]*domain.Task, 0, in.PageSize)
+	tasks := make([]*domain.Task, 0, limit)
 
 	for rows.Next() {
 
@@ -95,7 +87,7 @@ func (t *task) FindMany(
 	}, nil
 }
 
-func buildFindTasksQuery(teamID string, status domain.Status, assigneeID string, limit, offset int) (string, []any) {
+func buildFindMany(teamID string, status domain.Status, assigneeID string, limit, offset int) (string, []any) {
 	whereParts := make([]string, 0)
 	args := make([]any, 0)
 
@@ -151,7 +143,7 @@ limit ? offset ?;
 	return query, args
 }
 
-func buildCountTasksQuery(teamID string, status domain.Status, assigneeID string) (string, []any) {
+func buildCount(teamID string, status domain.Status, assigneeID string) (string, []any) {
 	whereParts := make([]string, 0)
 	args := make([]any, 0)
 

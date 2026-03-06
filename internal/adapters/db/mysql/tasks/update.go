@@ -53,9 +53,9 @@ func buildUpdateTask(id string, in *inputs.UpdateTask) (string, []any) {
 		args = append(args, *in.Description)
 	}
 
-	if in.Role != nil {
+	if in.Status != nil {
 		setParts = append(setParts, "status = ?")
-		args = append(args, *in.Role)
+		args = append(args, *in.Status)
 	}
 
 	if len(setParts) == 0 {

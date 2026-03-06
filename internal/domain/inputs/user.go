@@ -23,7 +23,7 @@ func (i *CreateUser) Validate() error {
 
 	if err != nil {
 		verrs = append(verrs, domain.ValidationError{
-			Field:   "Email",
+			Field:   "email",
 			Message: "Некорректный формат email",
 		})
 	}
@@ -32,7 +32,7 @@ func (i *CreateUser) Validate() error {
 
 	if err != nil {
 		verrs = append(verrs, domain.ValidationError{
-			Field:   "Password",
+			Field:   "password",
 			Message: msg,
 		})
 	}
@@ -41,8 +41,45 @@ func (i *CreateUser) Validate() error {
 
 	if err != nil {
 		verrs = append(verrs, domain.ValidationError{
-			Field:   "Username",
+			Field:   "username",
 			Message: "Имя пользователя должно быть не менее 3 символов",
+		})
+	}
+
+	if len(verrs) > 0 {
+		ve := &domain.ValidatationErrors{
+			Errors: verrs,
+		}
+		return ve
+	}
+
+	return nil
+}
+
+type Login struct {
+	Email    string `json:"email" validate:"required" example:"testemail@mail.ru"`
+	Password string `json:"password" validate:"required" example:"Assdfsdf2323!_"`
+}
+
+func (i *Login) Validate() error {
+
+	var verrs []domain.ValidationError
+
+	err := validation.IsEmail(i.Email)
+
+	if err != nil {
+		verrs = append(verrs, domain.ValidationError{
+			Field:   "email",
+			Message: "Некорректный формат email",
+		})
+	}
+
+	msg, err := validatePassword(i.Password)
+
+	if err != nil {
+		verrs = append(verrs, domain.ValidationError{
+			Field:   "password",
+			Message: msg,
 		})
 	}
 

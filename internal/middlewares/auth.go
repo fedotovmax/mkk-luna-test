@@ -16,8 +16,6 @@ import (
 var emptyHeaderErr = errors.New("empty authorization header")
 var badHeaderFormatErr = errors.New("bad authorization header format")
 
-var Unauthorized = "Unauthorized"
-
 func validateAuthHeader(header string) (string, error) {
 	if header == "" {
 		return "", emptyHeaderErr
@@ -36,36 +34,46 @@ func validateAuthHeader(header string) (string, error) {
 	return authHeaderParts[1], nil
 }
 
+type AuthMiddleware struct {
+	log          *slog.Logger
+	tokenManager ports.TokenManager
+	issuer       string
+}
+
 func NewAuthMiddleware(
 	log *slog.Logger,
 	tokenManager ports.TokenManager,
 	issuer string,
-) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			authHeader := r.Header.Get(httpcommon.HeaderAuthorization)
-
-			accessToken, err := validateAuthHeader(authHeader)
-
-			if err != nil {
-				log.Error("auth failed middleware failed", logger.Err(err))
-				httpcommon.WriteJSON(w, http.StatusUnauthorized, httpcommon.Message(Unauthorized))
-				return
-			}
-
-			sid, uid, err := tokenManager.Verify(accessToken, issuer)
-
-			if err != nil {
-				log.Error("auth failed middleware failed", logger.Err(err))
-				httpcommon.WriteJSON(w, http.StatusUnauthorized, httpcommon.Message(Unauthorized))
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), httpcommon.SessionCtxKey, &domain.Local{UserID: uid, SessionID: sid})
-
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
+) *AuthMiddleware {
+	return &AuthMiddleware{
+		log:          log,
+		tokenManager: tokenManager,
+		issuer:       issuer,
 	}
+}
+
+func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		authHeader := r.Header.Get(httpcommon.HeaderAuthorization)
+		accessToken, err := validateAuthHeader(authHeader)
+
+		if err != nil {
+			m.log.Error("auth failed middleware failed", logger.Err(err))
+			httpcommon.WriteJSON(w, http.StatusUnauthorized, httpcommon.Message(unauthorized))
+			return
+		}
+
+		sid, uid, err := m.tokenManager.Verify(accessToken, m.issuer)
+
+		if err != nil {
+			m.log.Error("auth failed middleware failed", logger.Err(err))
+			httpcommon.WriteJSON(w, http.StatusUnauthorized, httpcommon.Message(unauthorized))
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), httpcommon.SessionCtxKey, &domain.Local{UserID: uid, SessionID: sid})
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

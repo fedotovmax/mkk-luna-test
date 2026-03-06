@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -12,6 +11,19 @@ const (
 	StatusInProgress Status = "in_progress"
 	StatusDone       Status = "done"
 )
+
+func (s Status) String() string {
+	return string(s)
+}
+
+func (s Status) IsValid() bool {
+	switch s {
+	case StatusTodo, StatusInProgress, StatusDone:
+		return true
+	default:
+		return false
+	}
+}
 
 type Task struct {
 	Assignee    *BaseUser
@@ -28,7 +40,7 @@ type Task struct {
 type History struct {
 	ChangedBy BaseUser
 	ChangedAt time.Time
-	Shapshot  json.RawMessage
+	Shapshot  Task
 	ID        string
 	TaskID    string
 }
