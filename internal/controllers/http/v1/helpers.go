@@ -29,6 +29,12 @@ func handleErrors(w http.ResponseWriter, log *slog.Logger, fallbackMessage strin
 		return
 	}
 
+	if errors.Is(err, errs.ErrNoRightsToCreateTask) {
+		httpcommon.WriteJSON(w, http.StatusForbidden,
+			httpcommon.Message("Недостаточно прав для создания задачи"))
+		return
+	}
+
 	if errors.Is(err, errs.ErrNoRightsToDeleteTaskComment) {
 		httpcommon.WriteJSON(w, http.StatusForbidden,
 

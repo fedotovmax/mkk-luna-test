@@ -192,6 +192,38 @@ definitions:
     - owner
     - updated_at
     type: object
+  domain.TeamStats:
+    properties:
+      done_tasks_last_seven_days:
+        type: integer
+      id:
+        type: string
+      members_count:
+        type: integer
+      name:
+        type: string
+    required:
+    - done_tasks_last_seven_days
+    - id
+    - members_count
+    - name
+    type: object
+  domain.TopUserInTeam:
+    properties:
+      created_tasks:
+        type: integer
+      team_id:
+        type: string
+      team_name:
+        type: string
+      user:
+        $ref: '#/definitions/domain.BaseUser'
+    required:
+    - created_tasks
+    - team_id
+    - team_name
+    - user
+    type: object
   domain.ValidatationErrors:
     properties:
       errors:
@@ -214,7 +246,12 @@ definitions:
   inputs.CreateComment:
     properties:
       text:
+        example: Комментарий к задаче
+        maxLength: 500
+        minLength: 1
         type: string
+    required:
+    - text
     type: object
   inputs.CreateTask:
     properties:
@@ -307,9 +344,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Login in user account
+      description: Войти в аккаунт пользователя
       parameters:
-      - description: Login in account with body dto
+      - description: Войти в аккаунт с помощью электронной почты и пароля
         in: body
         name: dto
         required: true
@@ -334,16 +371,16 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/httpcommon.MessageResponse'
-      summary: Login in account
+      summary: Войти в аккаунт
       tags:
       - users
   /api/v1/register:
     post:
       consumes:
       - application/json
-      description: Create new user account
+      description: Создать новый аккаунт пользователя
       parameters:
-      - description: Create user account with body dto
+      - description: Объект для создания аккаунта пользователя
         in: body
         name: dto
         required: true
@@ -368,9 +405,47 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/httpcommon.MessageResponse'
-      summary: Create user account
+      summary: Создать новый аккаунт пользователя
       tags:
       - users
+  /api/v1/statistics/teams:
+    get:
+      description: Возвращает статистику по всем командам
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TeamStats'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+      summary: Статистика по командам
+      tags:
+      - statistics
+  /api/v1/statistics/top-users:
+    get:
+      description: Возвращает пользователей с наибольшим количеством задач в командах
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.TopUserInTeam'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+      summary: Топ пользователей
+      tags:
+      - statistics
   /api/v1/tasks:
     get:
       consumes:
@@ -444,7 +519,7 @@ paths:
       - application/json
       description: Создать задачу в команде, пользователь должен быть членом команды
       parameters:
-      - description: Create task dto
+      - description: Объект для создания задачи
         in: body
         name: dto
         required: true
@@ -494,7 +569,7 @@ paths:
         name: id
         required: true
         type: string
-      - description: Update task dto
+      - description: Объект для обновления задачи
         in: body
         name: dto
         required: true
@@ -591,7 +666,7 @@ paths:
         name: id
         required: true
         type: string
-      - description: Create comment dto
+      - description: Объект для создания комментария
         in: body
         name: dto
         required: true
@@ -679,7 +754,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get user teams
+      description: олучить команды пользователя
       produces:
       - application/json
       responses:
@@ -697,15 +772,15 @@ paths:
             $ref: '#/definitions/httpcommon.MessageResponse'
       security:
       - BearerAuth: []
-      summary: Get user teams
+      summary: Получить команды пользователя
       tags:
       - teams
     post:
       consumes:
       - application/json
-      description: Create team
+      description: Создать команду
       parameters:
-      - description: Create team with body dto
+      - description: Объект для создания команды
         in: body
         name: dto
         required: true
@@ -736,7 +811,7 @@ paths:
             $ref: '#/definitions/httpcommon.MessageResponse'
       security:
       - BearerAuth: []
-      summary: Create team
+      summary: Создать команду
       tags:
       - teams
   /api/v1/teams/{id}/invite:

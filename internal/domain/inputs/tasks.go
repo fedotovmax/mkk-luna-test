@@ -151,7 +151,7 @@ type CreateHistory struct {
 }
 
 type CreateComment struct {
-	Text string
+	Text string `json:"text" validate:"required" example:"Комментарий к задаче" minLength:"1" maxLength:"500"`
 }
 
 func (i *CreateComment) Validate() error {

@@ -117,10 +117,11 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 		rateLimiter,
 		tasksQuery,
 	)
+	statsController := v1.NewStatistic(log, teamsQuery)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		usersController.RegisterRoutes(r)
-
+		statsController.RegisterRoutes(r)
 		r.Group(func(withMiddlewaresRouter chi.Router) {
 
 			withMiddlewaresRouter.Use(authMiddleware.Middleware)

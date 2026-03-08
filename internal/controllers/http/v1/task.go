@@ -62,7 +62,7 @@ func NewTasks(
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        dto body      inputs.CreateTask true "Create task dto"
+// @Param        dto body      inputs.CreateTask true "Объект для создания задачи"
 // @Success      201 {object}  domain.IDResponse
 // @Failure      400 {object}  domain.ValidatationErrors
 // @Failure      401 {object}  httpcommon.MessageResponse
@@ -112,7 +112,7 @@ func (t *tasks) create(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id  path string           true "Task ID" format(uuid)
-// @Param        dto body inputs.UpdateTask true "Update task dto"
+// @Param        dto body inputs.UpdateTask true "Объект для обновления задачи"
 // @Success      200 {object} httpcommon.MessageResponse
 // @Failure      400 {object} domain.ValidatationErrors
 // @Failure      401 {object} httpcommon.MessageResponse
@@ -323,7 +323,7 @@ func (t *tasks) comments(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Security     BearerAuth
 // @Param        id  path      string                  true "Task ID" format(uuid)
-// @Param        dto body      inputs.CreateComment    true "Create comment dto"
+// @Param        dto body      inputs.CreateComment    true "Объект для создания комментария"
 // @Success      201 {object}  domain.IDResponse
 // @Failure      400 {object}  domain.ValidatationErrors
 // @Failure      401 {object}  httpcommon.MessageResponse

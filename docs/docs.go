@@ -20,7 +20,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/login": {
             "post": {
-                "description": "Login in user account",
+                "description": "Войти в аккаунт пользователя",
                 "consumes": [
                     "application/json"
                 ],
@@ -30,10 +30,10 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Login in account",
+                "summary": "Войти в аккаунт",
                 "parameters": [
                     {
-                        "description": "Login in account with body dto",
+                        "description": "Войти в аккаунт с помощью электронной почты и пароля",
                         "name": "dto",
                         "in": "body",
                         "required": true,
@@ -72,7 +72,7 @@ const docTemplate = `{
         },
         "/api/v1/register": {
             "post": {
-                "description": "Create new user account",
+                "description": "Создать новый аккаунт пользователя",
                 "consumes": [
                     "application/json"
                 ],
@@ -82,10 +82,10 @@ const docTemplate = `{
                 "tags": [
                     "users"
                 ],
-                "summary": "Create user account",
+                "summary": "Создать новый аккаунт пользователя",
                 "parameters": [
                     {
-                        "description": "Create user account with body dto",
+                        "description": "Объект для создания аккаунта пользователя",
                         "name": "dto",
                         "in": "body",
                         "required": true,
@@ -111,6 +111,64 @@ const docTemplate = `{
                         "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/statistics/teams": {
+            "get": {
+                "description": "Возвращает статистику по всем командам",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "summary": "Статистика по командам",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.TeamStats"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/statistics/top-users": {
+            "get": {
+                "description": "Возвращает пользователей с наибольшим количеством задач в командах",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "statistics"
+                ],
+                "summary": "Топ пользователей",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/domain.TopUserInTeam"
+                            }
                         }
                     },
                     "500": {
@@ -240,7 +298,7 @@ const docTemplate = `{
                 "summary": "Создать задачу",
                 "parameters": [
                     {
-                        "description": "Create task dto",
+                        "description": "Объект для создания задачи",
                         "name": "dto",
                         "in": "body",
                         "required": true,
@@ -317,7 +375,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Update task dto",
+                        "description": "Объект для обновления задачи",
                         "name": "dto",
                         "in": "body",
                         "required": true,
@@ -463,7 +521,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Create comment dto",
+                        "description": "Объект для создания комментария",
                         "name": "dto",
                         "in": "body",
                         "required": true,
@@ -590,7 +648,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get user teams",
+                "description": "олучить команды пользователя",
                 "consumes": [
                     "application/json"
                 ],
@@ -600,7 +658,7 @@ const docTemplate = `{
                 "tags": [
                     "teams"
                 ],
-                "summary": "Get user teams",
+                "summary": "Получить команды пользователя",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -628,7 +686,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Create team",
+                "description": "Создать команду",
                 "consumes": [
                     "application/json"
                 ],
@@ -638,10 +696,10 @@ const docTemplate = `{
                 "tags": [
                     "teams"
                 ],
-                "summary": "Create team",
+                "summary": "Создать команду",
                 "parameters": [
                     {
-                        "description": "Create team with body dto",
+                        "description": "Объект для создания команды",
                         "name": "dto",
                         "in": "body",
                         "required": true,
@@ -1042,6 +1100,52 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.TeamStats": {
+            "type": "object",
+            "required": [
+                "done_tasks_last_seven_days",
+                "id",
+                "members_count",
+                "name"
+            ],
+            "properties": {
+                "done_tasks_last_seven_days": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "members_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.TopUserInTeam": {
+            "type": "object",
+            "required": [
+                "created_tasks",
+                "team_id",
+                "team_name",
+                "user"
+            ],
+            "properties": {
+                "created_tasks": {
+                    "type": "integer"
+                },
+                "team_id": {
+                    "type": "string"
+                },
+                "team_name": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.BaseUser"
+                }
+            }
+        },
         "domain.ValidatationErrors": {
             "type": "object",
             "properties": {
@@ -1074,9 +1178,15 @@ const docTemplate = `{
         },
         "inputs.CreateComment": {
             "type": "object",
+            "required": [
+                "text"
+            ],
             "properties": {
                 "text": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 500,
+                    "minLength": 1,
+                    "example": "Комментарий к задаче"
                 }
             }
         },

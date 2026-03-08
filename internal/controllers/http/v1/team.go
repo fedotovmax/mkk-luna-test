@@ -35,14 +35,14 @@ func NewTeams(
 	return &teams{log: log, createTeam: createTeam, inviteUc: inviteUc, query: query, checkAuth: checkAuth, rateLimiter: rateLimiter}
 }
 
-// @Summary      Create team
-// @Description  Create team
+// @Summary      Создать команду
+// @Description  Создать команду
 // @Router       /api/v1/teams [post]
 // @Tags         teams
 // @Accept       json
 // @Produce      json
 // @Security BearerAuth
-// @Param dto body inputs.CreateTeam true "Create team with body dto"
+// @Param dto body inputs.CreateTeam true "Объект для создания команды"
 // @Success      201  {object}  domain.IDResponse
 // @Failure      400  {object}  domain.ValidatationErrors
 // @Failure      401  {object}  httpcommon.MessageResponse
@@ -93,8 +93,8 @@ func (c *teams) create(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// @Summary Get user teams
-// @Description Get user teams
+// @Summary Получить команды пользователя
+// @Description олучить команды пользователя
 // @Router /api/v1/teams [get]
 // @Tags teams
 // @Accept json

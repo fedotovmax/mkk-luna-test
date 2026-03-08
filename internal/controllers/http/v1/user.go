@@ -23,13 +23,13 @@ func NewUsers(register *usecases.Register, login *usecases.Login, log *slog.Logg
 	return &users{registerUc: register, loginUc: login, log: log}
 }
 
-// @Summary      Create user account
-// @Description  Create new user account
+// @Summary      Создать новый аккаунт пользователя
+// @Description  Создать новый аккаунт пользователя
 // @Router       /api/v1/register [post]
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param dto body inputs.CreateUser true "Create user account with body dto"
+// @Param dto body inputs.CreateUser true "Объект для создания аккаунта пользователя"
 // @Success      201  {object}  domain.IDResponse
 // @Failure      400  {object}  domain.ValidatationErrors
 // @Failure      409  {object}  httpcommon.MessageResponse
@@ -72,13 +72,13 @@ func (c *users) register(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// @Summary      Login in account
-// @Description  Login in user account
+// @Summary      Войти в аккаунт
+// @Description  Войти в аккаунт пользователя
 // @Router       /api/v1/login [post]
 // @Tags         users
 // @Accept       json
 // @Produce      json
-// @Param dto body inputs.Login true "Login in account with body dto"
+// @Param dto body inputs.Login true "Войти в аккаунт с помощью электронной почты и пароля"
 // @Success      201  {object}  domain.LoginResponse
 // @Failure      400  {object}  domain.ValidatationErrors
 // @Failure      404  {object}  httpcommon.MessageResponse
