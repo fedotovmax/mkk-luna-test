@@ -45,9 +45,6 @@ func (u *UpdateTask) Execute(ctx context.Context, userID string, taskID string, 
 
 		task, err := u.tasks.FindByID(txctx, taskID)
 		if err != nil {
-			if errors.Is(err, errs.ErrTaskNotFound) {
-				return fmt.Errorf("%s: %w", op, errs.ErrTaskNotFound)
-			}
 			return fmt.Errorf("%s: %w", op, err)
 		}
 

@@ -39,9 +39,6 @@ func (u *GetTaskHistory) Execute(
 
 	task, err := u.tasks.FindByID(ctx, taskID)
 	if err != nil {
-		if errors.Is(err, errs.ErrTaskNotFound) {
-			return nil, fmt.Errorf("%s: %w", op, errs.ErrTaskNotFound)
-		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 

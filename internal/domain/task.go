@@ -26,34 +26,34 @@ func (s Status) IsValid() bool {
 }
 
 type Task struct {
-	Assignee    *BaseUser
-	Description *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	Owner       BaseUser
-	ID          string
-	TeamID      string
-	Title       string
-	Status      Status
+	Assignee    *BaseUser `json:"assignee" validate:"optional"`
+	Description *string   `json:"description" validate:"optional"`
+	CreatedAt   time.Time `json:"created_at" validate:"required"`
+	UpdatedAt   time.Time `json:"updated_at" validate:"required"`
+	Owner       BaseUser  `json:"owner" validate:"required"`
+	ID          string    `json:"id" validate:"required"`
+	TeamID      string    `json:"team_id" validate:"required"`
+	Title       string    `json:"title" validate:"required"`
+	Status      Status    `json:"status" validate:"required"`
 }
 
 type History struct {
-	ChangedBy BaseUser
-	ChangedAt time.Time
-	Shapshot  Task
-	ID        string
-	TaskID    string
+	ChangedBy BaseUser  `json:"changed_by" validate:"required"`
+	ChangedAt time.Time `json:"changed_at" validate:"required"`
+	Shapshot  Task      `json:"snapshot" validate:"required"`
+	ID        string    `json:"id" validate:"required"`
+	TaskID    string    `json:"task_id" validate:"required"`
 }
 
 type Comment struct {
-	User      BaseUser
-	CreatedAt time.Time
-	ID        string
-	TaskID    string
-	Comment   string
+	User      BaseUser  `json:"user" validate:"required"`
+	CreatedAt time.Time `json:"created_at" validate:"required"`
+	ID        string    `json:"id" validate:"required"`
+	TaskID    string    `json:"task_id" validate:"required"`
+	Comment   string    `json:"comment" validate:"required"`
 }
 
 type FindTasksResponse struct {
-	Tasks []*Task
-	Total int
+	Tasks []*Task `json:"tasks" validate:"required"`
+	Total int     `json:"total" validate:"required"`
 }

@@ -3,12 +3,12 @@ package domain
 import "time"
 
 type Team struct {
-	Members   []Member
-	Owner     BaseUser
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	ID        string
-	Name      string
+	Members   []Member  `json:"members" validate:"required"`
+	Owner     BaseUser  `json:"owner" validate:"required"`
+	CreatedAt time.Time `json:"created_at" validate:"required"`
+	UpdatedAt time.Time `json:"updated_at" validate:"required"`
+	ID        string    `json:"id" validate:"required"`
+	Name      string    `json:"name" validate:"required"`
 }
 
 type Role string
@@ -20,10 +20,10 @@ const (
 )
 
 type Member struct {
-	User     BaseUser
-	JoinedAt time.Time
-	ID       string
-	Role     Role
+	User     BaseUser  `json:"user" validate:"required"`
+	JoinedAt time.Time `json:"joined_at" validate:"required"`
+	ID       string    `json:"id" validate:"required"`
+	Role     Role      `json:"role" validate:"required"`
 }
 
 func (m *Member) CanInvite() bool {
@@ -55,20 +55,20 @@ func (m *Member) CanUpdateTask(task *Task) bool {
 }
 
 type TeamStats struct {
-	ID                     string
-	Name                   string
-	MembersCount           int
-	DoneTasksLastSevenDays int
+	ID                     string `json:"id" validate:"required"`
+	Name                   string `json:"name" validate:"required"`
+	MembersCount           int    `json:"members_count" validate:"required"`
+	DoneTasksLastSevenDays int    `json:"done_tasks_last_seven_days" validate:"required"`
 }
 
 type TopUserInTeam struct {
-	User         BaseUser
-	TeamID       string
-	TeamName     string
-	CreatedTasks int
+	User         BaseUser `json:"user" validate:"required"`
+	TeamID       string   `json:"team_id" validate:"required"`
+	TeamName     string   `json:"team_name" validate:"required"`
+	CreatedTasks int      `json:"created_tasks" validate:"required"`
 }
 
 type FindTeamsResponse struct {
-	Teams []*Team
-	Total int
+	Teams []*Team `json:"teams" validate:"required"`
+	Total int     `json:"total" validate:"required"`
 }

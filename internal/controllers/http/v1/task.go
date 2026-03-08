@@ -17,14 +17,16 @@ import (
 )
 
 type tasks struct {
-	log        *slog.Logger
-	checkAuth  middlewares.Middleware
-	createUc   *usecases.CreateTask
-	updateUc   *usecases.UpdateTask
-	historyUc  *usecases.GetTaskHistory
-	commentsUc *usecases.GetTaskComments
-	getTaskUc  *usecases.GetTasks
-	query      queries.Tasks
+	log             *slog.Logger
+	checkAuth       middlewares.Middleware
+	rateLimiter     middlewares.Middleware
+	createUc        *usecases.CreateTask
+	updateUc        *usecases.UpdateTask
+	historyUc       *usecases.GetTaskHistory
+	commentsUc      *usecases.GetTaskComments
+	createCommentUc *usecases.CreateComment // Добавлено
+	getTaskUc       *usecases.GetTasks
+	query           queries.Tasks
 }
 
 func NewTasks(
@@ -33,19 +35,23 @@ func NewTasks(
 	updateUc *usecases.UpdateTask,
 	historyUc *usecases.GetTaskHistory,
 	commentsUc *usecases.GetTaskComments,
+	createCommentUc *usecases.CreateComment,
 	getTaskUc *usecases.GetTasks,
 	checkAuth middlewares.Middleware,
+	rateLimiter middlewares.Middleware,
 	query queries.Tasks,
 ) *tasks {
 	return &tasks{
-		log:        log,
-		createUc:   createUc,
-		updateUc:   updateUc,
-		historyUc:  historyUc,
-		commentsUc: commentsUc,
-		getTaskUc:  getTaskUc,
-		checkAuth:  checkAuth,
-		query:      query,
+		log:             log,
+		createUc:        createUc,
+		updateUc:        updateUc,
+		historyUc:       historyUc,
+		commentsUc:      commentsUc,
+		createCommentUc: createCommentUc,
+		getTaskUc:       getTaskUc,
+		checkAuth:       checkAuth,
+		rateLimiter:     rateLimiter,
+		query:           query,
 	}
 }
 
@@ -309,6 +315,64 @@ func (t *tasks) comments(w http.ResponseWriter, r *http.Request) {
 	httpcommon.WriteJSON(w, http.StatusOK, comments)
 }
 
+// @Summary      Создать комментарий к задаче
+// @Description  Создать комментарий к задаче. Пользователь должен быть членом команды задачи
+// @Router       /api/v1/tasks/{id}/comments [post]
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id  path      string                  true "Task ID" format(uuid)
+// @Param        dto body      inputs.CreateComment    true "Create comment dto"
+// @Success      201 {object}  domain.IDResponse
+// @Failure      400 {object}  domain.ValidatationErrors
+// @Failure      401 {object}  httpcommon.MessageResponse
+// @Failure      403 {object}  httpcommon.MessageResponse
+// @Failure      404 {object}  httpcommon.MessageResponse
+// @Failure      500 {object}  httpcommon.MessageResponse
+func (t *tasks) createComment(w http.ResponseWriter, r *http.Request) {
+	const op = "controllers.http.tasks.v1.createComment"
+
+	l := t.log.With(slog.String("op", op))
+
+	local, err := httpcommon.GetLocalSession(r)
+
+	if err != nil {
+		httpcommon.WriteJSON(w, http.StatusUnauthorized, httpcommon.Message(unauthorized))
+		return
+	}
+
+	uuidInput := inputs.UUID{ID: r.PathValue("id")}
+
+	if err := uuidInput.Validate("id"); err != nil {
+		handleValidationErrors(w, err)
+		return
+	}
+
+	var in inputs.CreateComment
+	if err := httpcommon.DecodeJSON(r.Body, &in); err != nil {
+		httpcommon.WriteJSON(w, http.StatusBadRequest, httpcommon.Message(invalidBodyFormat))
+		return
+	}
+
+	if err := in.Validate(); err != nil {
+		handleValidationErrors(w, err)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	commentID, err := t.createCommentUc.Execute(ctx, local.UserID, uuidInput.ID, in.Text)
+	if err != nil {
+		handleErrors(w, l, unexpectedErrorWhenCreateComment, err)
+		return
+	}
+
+	res := domain.IDResponse{ID: commentID}
+	httpcommon.WriteJSON(w, http.StatusCreated, res)
+}
+
 func (t *tasks) RegisterRoutes(r chi.Router) {
 
 	r.Route("/tasks", func(taskRouter chi.Router) {
@@ -321,6 +385,7 @@ func (t *tasks) RegisterRoutes(r chi.Router) {
 			oneTaskRouter.Put("/", t.update)
 			oneTaskRouter.Get("/history", t.history)
 			oneTaskRouter.Get("/comments", t.comments)
+			oneTaskRouter.Post("/comments", t.createComment)
 		})
 	})
 

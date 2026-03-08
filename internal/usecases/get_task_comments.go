@@ -38,10 +38,8 @@ func (u *GetTaskComments) Execute(
 	const op = "usecases.get_task_comments"
 
 	task, err := u.tasks.FindByID(ctx, taskID)
+
 	if err != nil {
-		if errors.Is(err, errs.ErrTaskNotFound) {
-			return nil, fmt.Errorf("%s: %w", op, errs.ErrTaskNotFound)
-		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 

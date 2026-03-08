@@ -16,11 +16,12 @@ import (
 )
 
 type teams struct {
-	log        *slog.Logger
-	createTeam *usecases.CreateTeam
-	inviteUc   *usecases.Invite
-	query      queries.Teams
-	checkAuth  middlewares.Middleware
+	log         *slog.Logger
+	createTeam  *usecases.CreateTeam
+	inviteUc    *usecases.Invite
+	query       queries.Teams
+	checkAuth   middlewares.Middleware
+	rateLimiter middlewares.Middleware
 }
 
 func NewTeams(
@@ -29,8 +30,9 @@ func NewTeams(
 	inviteUc *usecases.Invite,
 	query queries.Teams,
 	checkAuth middlewares.Middleware,
+	rateLimiter middlewares.Middleware,
 ) *teams {
-	return &teams{log: log, createTeam: createTeam, inviteUc: inviteUc, query: query, checkAuth: checkAuth}
+	return &teams{log: log, createTeam: createTeam, inviteUc: inviteUc, query: query, checkAuth: checkAuth, rateLimiter: rateLimiter}
 }
 
 // @Summary      Create team

@@ -15,7 +15,7 @@ type TaskStorage interface {
 
 	Create(ctx context.Context, ownerID string, in *inputs.CreateTask) (string, error)
 	CreateHistory(ctx context.Context, in *inputs.CreateHistory) (string, error)
-	CreateComment(ctx context.Context, in *inputs.CreateComment) (string, error)
+	CreateComment(ctx context.Context, userID, taskID, text string) (string, error)
 
 	Update(ctx context.Context, id string, in *inputs.UpdateTask) error
 }

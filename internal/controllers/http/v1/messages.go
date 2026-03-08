@@ -12,7 +12,7 @@ const unexpectedErrorWhenExecuteUpdateTask = "при обновлении зад
 const unexpectedErrorWhenGetTaskHistory = "при получении истории задачи произошла неожиданная ошибка"
 const unexpectedErrorWhenGetTaskComments = "при получении комментариев задачи произошла неожиданная ошибка"
 const unexpectedErrorWhenGetTasks = "при получении задач произошла неожиданная ошибка"
-
+const unexpectedErrorWhenCreateComment = "при создании комментария произошла неожиданная ошибка"
 const unauthorized = "неавторизован"
 
 const ok = "OK"

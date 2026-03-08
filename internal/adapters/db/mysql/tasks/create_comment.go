@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters"
-	"github.com/fedotovmax/mkk-luna-test/internal/domain/inputs"
 	"github.com/google/uuid"
 )
 
-func (t *task) CreateComment(ctx context.Context, in *inputs.CreateComment) (string, error) {
+func (t *task) CreateComment(ctx context.Context, userID, taskID, text string) (string, error) {
 
 	const op = "adapters.db.mysql.tasks.create_comment"
 
@@ -21,9 +20,9 @@ func (t *task) CreateComment(ctx context.Context, in *inputs.CreateComment) (str
 		ctx,
 		createComment,
 		id,
-		in.TaskID,
-		in.UserID,
-		in.Text,
+		taskID,
+		userID,
+		text,
 	)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, adapters.ErrInternal)

@@ -435,6 +435,81 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Создать комментарий к задаче. Пользователь должен быть членом команды задачи",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tasks"
+                ],
+                "summary": "Создать комментарий к задаче",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Task ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create comment dto",
+                        "name": "dto",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/inputs.CreateComment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/domain.IDResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ValidatationErrors"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/httpcommon.MessageResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/tasks/{id}/history": {
@@ -696,6 +771,11 @@ const docTemplate = `{
     "definitions": {
         "domain.BaseUser": {
             "type": "object",
+            "required": [
+                "email",
+                "id",
+                "username"
+            ],
             "properties": {
                 "email": {
                     "type": "string"
@@ -710,17 +790,24 @@ const docTemplate = `{
         },
         "domain.Comment": {
             "type": "object",
+            "required": [
+                "comment",
+                "created_at",
+                "id",
+                "task_id",
+                "user"
+            ],
             "properties": {
                 "comment": {
                     "type": "string"
                 },
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "taskID": {
+                "task_id": {
                     "type": "string"
                 },
                 "user": {
@@ -730,6 +817,10 @@ const docTemplate = `{
         },
         "domain.FindTasksResponse": {
             "type": "object",
+            "required": [
+                "tasks",
+                "total"
+            ],
             "properties": {
                 "tasks": {
                     "type": "array",
@@ -744,6 +835,10 @@ const docTemplate = `{
         },
         "domain.FindTeamsResponse": {
             "type": "object",
+            "required": [
+                "teams",
+                "total"
+            ],
             "properties": {
                 "teams": {
                     "type": "array",
@@ -758,20 +853,27 @@ const docTemplate = `{
         },
         "domain.History": {
             "type": "object",
+            "required": [
+                "changed_at",
+                "changed_by",
+                "id",
+                "snapshot",
+                "task_id"
+            ],
             "properties": {
-                "changedAt": {
+                "changed_at": {
                     "type": "string"
                 },
-                "changedBy": {
+                "changed_by": {
                     "$ref": "#/definitions/domain.BaseUser"
                 },
                 "id": {
                     "type": "string"
                 },
-                "shapshot": {
+                "snapshot": {
                     "$ref": "#/definitions/domain.Task"
                 },
-                "taskID": {
+                "task_id": {
                     "type": "string"
                 }
             }
@@ -818,11 +920,17 @@ const docTemplate = `{
         },
         "domain.Member": {
             "type": "object",
+            "required": [
+                "id",
+                "joined_at",
+                "role",
+                "user"
+            ],
             "properties": {
                 "id": {
                     "type": "string"
                 },
-                "joinedAt": {
+                "joined_at": {
                     "type": "string"
                 },
                 "role": {
@@ -861,11 +969,20 @@ const docTemplate = `{
         },
         "domain.Task": {
             "type": "object",
+            "required": [
+                "created_at",
+                "id",
+                "owner",
+                "status",
+                "team_id",
+                "title",
+                "updated_at"
+            ],
             "properties": {
                 "assignee": {
                     "$ref": "#/definitions/domain.BaseUser"
                 },
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "description": {
@@ -880,21 +997,29 @@ const docTemplate = `{
                 "status": {
                     "$ref": "#/definitions/domain.Status"
                 },
-                "teamID": {
+                "team_id": {
                     "type": "string"
                 },
                 "title": {
                     "type": "string"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 }
             }
         },
         "domain.Team": {
             "type": "object",
+            "required": [
+                "created_at",
+                "id",
+                "members",
+                "name",
+                "owner",
+                "updated_at"
+            ],
             "properties": {
-                "createdAt": {
+                "created_at": {
                     "type": "string"
                 },
                 "id": {
@@ -912,7 +1037,7 @@ const docTemplate = `{
                 "owner": {
                     "$ref": "#/definitions/domain.BaseUser"
                 },
-                "updatedAt": {
+                "updated_at": {
                     "type": "string"
                 }
             }
@@ -943,6 +1068,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "inputs.CreateComment": {
+            "type": "object",
+            "properties": {
+                "text": {
                     "type": "string"
                 }
             }

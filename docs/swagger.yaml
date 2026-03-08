@@ -7,19 +7,29 @@ definitions:
         type: string
       username:
         type: string
+    required:
+    - email
+    - id
+    - username
     type: object
   domain.Comment:
     properties:
       comment:
         type: string
-      createdAt:
+      created_at:
         type: string
       id:
         type: string
-      taskID:
+      task_id:
         type: string
       user:
         $ref: '#/definitions/domain.BaseUser'
+    required:
+    - comment
+    - created_at
+    - id
+    - task_id
+    - user
     type: object
   domain.FindTasksResponse:
     properties:
@@ -29,6 +39,9 @@ definitions:
         type: array
       total:
         type: integer
+    required:
+    - tasks
+    - total
     type: object
   domain.FindTeamsResponse:
     properties:
@@ -38,19 +51,28 @@ definitions:
         type: array
       total:
         type: integer
+    required:
+    - teams
+    - total
     type: object
   domain.History:
     properties:
-      changedAt:
+      changed_at:
         type: string
-      changedBy:
+      changed_by:
         $ref: '#/definitions/domain.BaseUser'
       id:
         type: string
-      shapshot:
+      snapshot:
         $ref: '#/definitions/domain.Task'
-      taskID:
+      task_id:
         type: string
+    required:
+    - changed_at
+    - changed_by
+    - id
+    - snapshot
+    - task_id
     type: object
   domain.IDResponse:
     properties:
@@ -85,12 +107,17 @@ definitions:
     properties:
       id:
         type: string
-      joinedAt:
+      joined_at:
         type: string
       role:
         $ref: '#/definitions/domain.Role'
       user:
         $ref: '#/definitions/domain.BaseUser'
+    required:
+    - id
+    - joined_at
+    - role
+    - user
     type: object
   domain.Role:
     enum:
@@ -116,7 +143,7 @@ definitions:
     properties:
       assignee:
         $ref: '#/definitions/domain.BaseUser'
-      createdAt:
+      created_at:
         type: string
       description:
         type: string
@@ -126,16 +153,24 @@ definitions:
         $ref: '#/definitions/domain.BaseUser'
       status:
         $ref: '#/definitions/domain.Status'
-      teamID:
+      team_id:
         type: string
       title:
         type: string
-      updatedAt:
+      updated_at:
         type: string
+    required:
+    - created_at
+    - id
+    - owner
+    - status
+    - team_id
+    - title
+    - updated_at
     type: object
   domain.Team:
     properties:
-      createdAt:
+      created_at:
         type: string
       id:
         type: string
@@ -147,8 +182,15 @@ definitions:
         type: string
       owner:
         $ref: '#/definitions/domain.BaseUser'
-      updatedAt:
+      updated_at:
         type: string
+    required:
+    - created_at
+    - id
+    - members
+    - name
+    - owner
+    - updated_at
     type: object
   domain.ValidatationErrors:
     properties:
@@ -167,6 +209,11 @@ definitions:
   httpcommon.MessageResponse:
     properties:
       message:
+        type: string
+    type: object
+  inputs.CreateComment:
+    properties:
+      text:
         type: string
     type: object
   inputs.CreateTask:
@@ -530,6 +577,56 @@ paths:
       security:
       - BearerAuth: []
       summary: Получить комментарии задачи
+      tags:
+      - tasks
+    post:
+      consumes:
+      - application/json
+      description: Создать комментарий к задаче. Пользователь должен быть членом команды
+        задачи
+      parameters:
+      - description: Task ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Create comment dto
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/inputs.CreateComment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/domain.IDResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ValidatationErrors'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httpcommon.MessageResponse'
+      security:
+      - BearerAuth: []
+      summary: Создать комментарий к задаче
       tags:
       - tasks
   /api/v1/tasks/{id}/history:

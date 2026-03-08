@@ -87,6 +87,8 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 	getTaskHistoryUsecase := usecases.NewGetTaskHistory(log, tasksQuery, teamsQuery)
 	getTaskCommentsUsecase := usecases.NewGetTaskComments(log, tasksQuery, teamsQuery)
 	getTasksUsecase := usecases.NewGetTasks(log, tasksQuery, teamsQuery)
+	createCommentUsecase := usecases.NewCreateComment(log, tasksMysql, tasksQuery, teamsQuery)
+
 	authMiddleware := middlewares.NewAuthMiddleware(log, tokenManager, cfg.Tokens.Issuer)
 	rateLimiter := middlewares.NewUserRateLimiter(rate.Every(time.Minute/100), 10)
 
@@ -95,13 +97,38 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 	r.Handle("/swagger/*", httpSwagger.WrapHandler)
 
 	usersController := v1.NewUsers(registerUsecase, loginUsecase, log)
-	teamController := v1.NewTeams(log, createTeamUsecase, inviteUsecase, teamsQuery, authMiddleware)
-	taskController := v1.NewTasks(log, createTaskUsecase, updateTaskUsecase, getTaskHistoryUsecase, getTaskCommentsUsecase, getTasksUsecase, authMiddleware, tasksQuery)
+	teamController := v1.NewTeams(
+		log,
+		createTeamUsecase,
+		inviteUsecase,
+		teamsQuery,
+		authMiddleware,
+		rateLimiter,
+	)
+	taskController := v1.NewTasks(
+		log,
+		createTaskUsecase,
+		updateTaskUsecase,
+		getTaskHistoryUsecase,
+		getTaskCommentsUsecase,
+		createCommentUsecase,
+		getTasksUsecase,
+		authMiddleware,
+		rateLimiter,
+		tasksQuery,
+	)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		usersController.RegisterRoutes(r)
-		teamController.RegisterRoutes(r)
-		taskController.RegisterRoutes(r)
+
+		r.Group(func(withMiddlewaresRouter chi.Router) {
+
+			withMiddlewaresRouter.Use(authMiddleware.Middleware)
+			withMiddlewaresRouter.Use(rateLimiter.Middleware)
+
+			taskController.RegisterRoutes(withMiddlewaresRouter)
+			teamController.RegisterRoutes(withMiddlewaresRouter)
+		})
 	})
 
 	httpServer := http.New(cfg.HTTPServer, r)

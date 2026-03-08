@@ -5,16 +5,16 @@ import (
 )
 
 type User struct {
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	UserName     string
-	Email        string
-	PasswordHash string
-	ID           string
+	CreatedAt    time.Time `json:"created_at" validate:"required"`
+	UpdatedAt    time.Time `json:"updated_at" validate:"required"`
+	UserName     string    `json:"username" validate:"required"`
+	Email        string    `json:"email" validate:"required"`
+	PasswordHash string    `json:"password_hash" validate:"required"`
+	ID           string    `json:"id" validate:"required"`
 }
 
 type BaseUser struct {
-	ID       string
-	Username string
-	Email    string
+	ID       string `json:"id" validate:"required"`
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required"`
 }

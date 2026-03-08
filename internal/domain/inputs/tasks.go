@@ -151,7 +151,24 @@ type CreateHistory struct {
 }
 
 type CreateComment struct {
-	TaskID string
-	UserID string
-	Text   string
+	Text string
+}
+
+func (i *CreateComment) Validate() error {
+	var verrs []domain.ValidationError
+
+	if err := validation.LengthRange(i.Text, 1, 500); err != nil {
+		verrs = append(verrs, domain.ValidationError{
+			Field:   "text",
+			Message: "Текст комментария должен быть от 1 до 500 символов",
+		})
+	}
+
+	if len(verrs) > 0 {
+		return &domain.ValidatationErrors{
+			Errors: verrs,
+		}
+	}
+
+	return nil
 }
