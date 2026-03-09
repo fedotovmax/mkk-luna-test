@@ -58,7 +58,7 @@ type App struct {
 	Env        AppEnv
 }
 
-// Load config from file, when required APP_ENV variable provided and equal to local or development,
+// Load config from file, when required APP_ENV variable provided and equal to development,
 // And required flag "config_path" for *.env file with variables: -c or -config_path
 // Else get env variables provided by operation system (defined by user/container/environment)
 func New(path string) (*App, error) {
