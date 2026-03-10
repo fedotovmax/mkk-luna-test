@@ -1,3 +1,4 @@
+#docker compose --env-file .release.env up -d --build
 services:
   mariadb:
     image: mariadb:11.4
@@ -58,8 +59,19 @@ services:
       dockerfile: cmd/api/Dockerfile
     container_name: mkk_luna_api
     restart: unless-stopped
-    env_file:
-      - .release.env
+    environment:
+      APP_ENV: release
+      HTTP_SERVER_PORT: ${HTTP_SERVER_PORT}
+
+      MYSQL_DSN: ${MYSQL_DSN}
+
+      REDIS_ADDR: ${REDIS_ADDR}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      ACCESS_TOKEN_SECRET: ${ACCESS_TOKEN_SECRET}
+      ACCESS_TOKEN_DURATION: ${ACCESS_TOKEN_DURATION}
+      REFRESH_TOKEN_DURATION: ${REFRESH_TOKEN_DURATION}
+      TOKEN_ISSUER: ${TOKEN_ISSUER}
     ports:
       - "${HTTP_SERVER_PORT}:5555"
     depends_on:
@@ -69,10 +81,22 @@ services:
         condition: service_healthy
     networks:
       - app_network
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT}:9090"
+    networks:
+      - app_network
 
 volumes:
   mariadb_data:
   redis_storage_data:
+  prometheus_data:
 
 networks:
   app_network:

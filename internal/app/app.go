@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+
 	"time"
 
 	_ "github.com/fedotovmax/mkk-luna-test/docs"
@@ -16,6 +17,7 @@ import (
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/teams"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/users"
 	mysqlTx "github.com/fedotovmax/mkk-luna-test/internal/adapters/db/transaction/mysql"
+	"github.com/fedotovmax/mkk-luna-test/internal/adapters/observability/metrics"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/server/http"
 	"github.com/fedotovmax/mkk-luna-test/internal/config"
 	v1 "github.com/fedotovmax/mkk-luna-test/internal/controllers/http/v1"
@@ -24,6 +26,7 @@ import (
 	"github.com/fedotovmax/mkk-luna-test/internal/usecases"
 	"github.com/fedotovmax/mkk-luna-test/pkg/logger"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 	"golang.org/x/time/rate"
 )
@@ -90,11 +93,14 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 	createCommentUsecase := usecases.NewCreateComment(log, tasksMysql, tasksQuery, teamsQuery)
 
 	authMiddleware := middlewares.NewAuthMiddleware(log, tokenManager, cfg.Tokens.Issuer)
-	rateLimiter := middlewares.NewUserRateLimiter(rate.Every(time.Minute/100), 10)
-
+	rateLimiter := middlewares.NewUserRateLimiter(rate.Limit(100.0/60.0), 100)
 	r := chi.NewRouter()
 
+	r.Use(metrics.Middleware)
+
 	r.Handle("/swagger/*", httpSwagger.WrapHandler)
+	metrics.RegisterHTTPMetrics()
+	r.Handle("/metrics", promhttp.Handler())
 
 	usersController := v1.NewUsers(registerUsecase, loginUsecase, log)
 	teamController := v1.NewTeams(

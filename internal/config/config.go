@@ -187,7 +187,7 @@ func (c *App) validate() error {
 		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Redis.Password", err))
 	}
 
-	_, err = validation.IsURI(c.Redis.Addr)
+	err = validation.EmptyString(c.Redis.Addr)
 
 	if err != nil {
 		validationErrors = append(validationErrors, fmt.Errorf("%s: %w", "Redis.Addr", err))

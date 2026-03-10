@@ -18,7 +18,7 @@ func setupLooger(env config.AppEnv) *slog.Logger {
 	if env == config.Development {
 		return logger.NewHandler(slog.LevelDebug)
 	}
-	return logger.NewHandler(slog.LevelWarn)
+	return logger.NewHandler(slog.LevelInfo)
 }
 
 func loadConfigPathFlags() string {
