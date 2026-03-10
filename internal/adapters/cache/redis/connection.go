@@ -45,6 +45,10 @@ func New(ctx context.Context, cfg *config.Redis, log *slog.Logger) (*RedisDb, er
 
 }
 
+func (r *RedisDb) GetClient() *goredis.Client {
+	return r.redisClient
+}
+
 func (r *RedisDb) Stop(ctx context.Context) error {
 	op := "adapters.cache.redis.Stop"
 

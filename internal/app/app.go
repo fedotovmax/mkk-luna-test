@@ -10,6 +10,8 @@ import (
 	_ "github.com/fedotovmax/mkk-luna-test/docs"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/auth/jwt"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/cache/redis"
+	tasksRedis "github.com/fedotovmax/mkk-luna-test/internal/adapters/cache/redis/tasks"
+
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql"
 	"github.com/fedotovmax/mkk-luna-test/internal/adapters/db/mysql/sessions"
@@ -75,6 +77,8 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 	usersMysql := users.New(txExtractor)
 	sessionsMysql := sessions.New(txExtractor)
 
+	tasksCache := tasksRedis.New(log, redisConn.GetClient())
+
 	teamsQuery := queries.NewTeams(teamsMysql)
 	tasksQuery := queries.NewTasks(tasksMysql)
 	usersQuery := queries.NewUsers(usersMysql)
@@ -89,7 +93,7 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 	updateTaskUsecase := usecases.NewUpdateTask(log, transactionManager, tasksMysql, tasksQuery, teamsQuery)
 	getTaskHistoryUsecase := usecases.NewGetTaskHistory(log, tasksQuery, teamsQuery)
 	getTaskCommentsUsecase := usecases.NewGetTaskComments(log, tasksQuery, teamsQuery)
-	getTasksUsecase := usecases.NewGetTasks(log, tasksQuery, teamsQuery)
+	getTasksUsecase := usecases.NewGetTasks(log, tasksQuery, teamsQuery, tasksCache)
 	createCommentUsecase := usecases.NewCreateComment(log, tasksMysql, tasksQuery, teamsQuery)
 
 	authMiddleware := middlewares.NewAuthMiddleware(log, tokenManager, cfg.Tokens.Issuer)

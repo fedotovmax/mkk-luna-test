@@ -201,7 +201,6 @@ func (t *tasks) get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	offset := (page - 1) * pageSize
-	limit := pageSize
 
 	in := &inputs.FindManyTasks{
 		TeamID:     query.Get("team_id"),
@@ -217,7 +216,7 @@ func (t *tasks) get(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	res, err := t.getTaskUc.Execute(ctx, local.UserID, limit, offset, in)
+	res, err := t.getTaskUc.Execute(ctx, local.UserID, pageSize, offset, in)
 	if err != nil {
 		handleErrors(w, l, unexpectedErrorWhenGetTasks, err)
 		return

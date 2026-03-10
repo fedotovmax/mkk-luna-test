@@ -19,3 +19,8 @@ type TaskStorage interface {
 
 	Update(ctx context.Context, id string, in *inputs.UpdateTask) error
 }
+
+type TaskCache interface {
+	Get(ctx context.Context, key string) (*domain.FindTasksResponse, error)
+	Set(ctx context.Context, key string, data *domain.FindTasksResponse) error
+}
