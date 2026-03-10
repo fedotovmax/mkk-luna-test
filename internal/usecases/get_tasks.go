@@ -47,6 +47,8 @@ func (u *GetTasks) Execute(
 
 	const op = "usecases.get_tasks"
 
+	l := u.log.With(slog.String("op", op))
+
 	_, err := u.teams.FindMember(ctx, userID, in.TeamID)
 
 	if err != nil {
@@ -66,10 +68,15 @@ func (u *GetTasks) Execute(
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", op, err)
 			}
-			go u.cache.Set(ctx, key, res)
+			err = u.cache.Set(ctx, key, res)
+			if err != nil {
+				l.Error("failed to set tasks to cache", "error", err)
+			}
+			l.Info("TASKS FROM DB")
 			return res, nil
 		}
 	}
 
+	l.Info("TASKS FROM CACHE")
 	return res, nil
 }

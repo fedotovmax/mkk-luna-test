@@ -103,8 +103,11 @@ func New(cfg *config.App, log *slog.Logger) (*App, error) {
 	r.Use(metrics.Middleware)
 
 	r.Handle("/swagger/*", httpSwagger.WrapHandler)
-	metrics.RegisterHTTPMetrics()
-	r.Handle("/metrics", promhttp.Handler())
+
+	if cfg.Env == config.Release {
+		metrics.RegisterHTTPMetrics()
+		r.Handle("/metrics", promhttp.Handler())
+	}
 
 	usersController := v1.NewUsers(registerUsecase, loginUsecase, log)
 	teamController := v1.NewTeams(
