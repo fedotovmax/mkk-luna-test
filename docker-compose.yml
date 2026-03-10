@@ -1,4 +1,5 @@
 #docker compose --env-file .release.env up -d --build
+#docker compose --env-file .release.env up -d
 services:
   mariadb:
     image: mariadb:11.4
