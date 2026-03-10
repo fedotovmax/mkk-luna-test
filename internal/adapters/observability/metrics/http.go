@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	HTTPRequestCount = prometheus.NewCounterVec(
+	httpRequestCount = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_requests_total",
 			Help: "Total HTTP requests",
@@ -18,7 +18,7 @@ var (
 		[]string{"method", "path", "status"},
 	)
 
-	HTTPRequestDuration = prometheus.NewHistogramVec(
+	httpRequestDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "http_request_duration_seconds",
 			Help:    "HTTP request duration",
@@ -26,12 +26,21 @@ var (
 		},
 		[]string{"method", "path"},
 	)
+
+	httpErrorsTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_errors_total",
+			Help: "Total number of HTTP error responses",
+		},
+		[]string{"method", "path", "status"},
+	)
 )
 
 func RegisterHTTPMetrics() {
 	prometheus.MustRegister(
-		HTTPRequestCount,
-		HTTPRequestDuration,
+		httpRequestCount,
+		httpRequestDuration,
+		httpErrorsTotal,
 	)
 }
 
@@ -51,17 +60,27 @@ func Middleware(next http.Handler) http.Handler {
 
 		routePattern := chi.RouteContext(r.Context()).RoutePattern()
 
-		HTTPRequestDuration.
+		httpRequestDuration.
 			WithLabelValues(r.Method, routePattern).
 			Observe(duration)
 
-		HTTPRequestCount.
+		httpRequestCount.
 			WithLabelValues(
 				r.Method,
 				routePattern,
 				strconv.Itoa(rw.status),
 			).
 			Inc()
+
+		if rw.status >= 400 {
+			httpErrorsTotal.
+				WithLabelValues(
+					r.Method,
+					routePattern,
+					strconv.Itoa(rw.status),
+				).
+				Inc()
+		}
 	})
 }
 

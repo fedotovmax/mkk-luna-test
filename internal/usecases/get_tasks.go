@@ -57,7 +57,8 @@ func (u *GetTasks) Execute(
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	res, err := u.cache.Get(ctx, cache.TasksListKey(limit, offset, in))
+	key := cache.TasksListKey(limit, offset, in)
+	res, err := u.cache.Get(ctx, key)
 
 	if err != nil {
 		if errors.Is(err, adapters.ErrNotFound) {
@@ -65,6 +66,7 @@ func (u *GetTasks) Execute(
 			if err != nil {
 				return nil, fmt.Errorf("%s: %w", op, err)
 			}
+			go u.cache.Set(ctx, key, res)
 			return res, nil
 		}
 	}
